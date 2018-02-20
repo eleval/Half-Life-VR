@@ -52,13 +52,13 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>.\Debug\</OutDir>
+    <OutDir>$(SolutionDir)Output\Debug\</OutDir>
     <IntDir>.\Debug\</IntDir>
     <LinkIncremental>true</LinkIncremental>
     <TargetName>client</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>.\Release\</OutDir>
+    <OutDir>$(SolutionDir)Output\Release\</OutDir>
     <IntDir>.\Release\</IntDir>
     <LinkIncremental>false</LinkIncremental>
     <TargetName>client</TargetName>
@@ -103,7 +103,7 @@
       <LinkDLL>true</LinkDLL>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
-      <OutputFile>.\Debug\client.dll</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName).dll</OutputFile>
       <ImportLibrary>.\Debug\client.lib</ImportLibrary>
       <AdditionalDependencies>odbc32.lib;odbccp32.lib;winmm.lib;../utils/vgui/lib/win32_vc6/vgui.lib;wsock32.lib;openvr/openvr_api.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
@@ -145,7 +145,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <LinkDLL>true</LinkDLL>
       <SubSystem>Windows</SubSystem>
-      <OutputFile>.\Release\client.dll</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName).dll</OutputFile>
       <ImportLibrary>.\Release\client.lib</ImportLibrary>
       <AdditionalDependencies>winmm.lib;../utils/vgui/lib/win32_vc6/vgui.lib;wsock32.lib;openvr/openvr_api.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
