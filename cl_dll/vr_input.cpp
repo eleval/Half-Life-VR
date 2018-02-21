@@ -18,7 +18,7 @@ VRInput::~VRInput()
 
 }
 
-void VRInput::HandleButtonPress(unsigned int button, vr::VRControllerState_t controllerState, bool leftOrRight, bool downOrUp)
+void VRInput::HandleButtonPress(VRButton button, vr::VRControllerState_t controllerState, bool leftOrRight, bool downOrUp)
 {
 	if (leftOrRight)
 	{				// Left controller button presses start here.
@@ -124,7 +124,7 @@ void VRInput::HandleButtonPress(unsigned int button, vr::VRControllerState_t con
 	}			// Controller button presses end here, trackpad/control stil star below
 }
 
-void VRInput::HandleTrackpad(unsigned int button, vr::VRControllerState_t controllerState, bool leftOrRight, bool downOrUp)
+void VRInput::HandleTrackpad(VRButton button, vr::VRControllerState_t controllerState, bool leftOrRight, bool downOrUp)
 {
 	vr::VRControllerAxis_t touchPadAxis = controllerState.rAxis[0];
 	downOrUp = (

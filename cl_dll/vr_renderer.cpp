@@ -84,7 +84,7 @@ void VRRenderer::CalcRefdef(struct ref_params_s* pparams)
 	if (pparams->nextView == 0)
 	{
 		vrHelper->UpdatePositions(pparams);
-		vrHelper->PrepareVRScene(vr::EVREye::Eye_Left, pparams);
+		vrHelper->PrepareVRScene(VREye::Left, pparams);
 		vrHelper->GetViewOrg(pparams->vieworg);
 		vrHelper->GetViewAngles(pparams->viewangles);
 
@@ -93,7 +93,7 @@ void VRRenderer::CalcRefdef(struct ref_params_s* pparams)
 	else if (pparams->nextView == 1)
 	{
 		vrHelper->FinishVRScene(pparams);
-		vrHelper->PrepareVRScene(vr::EVREye::Eye_Right, pparams);
+		vrHelper->PrepareVRScene(VREye::Right, pparams);
 		vrHelper->GetViewOrg(pparams->vieworg);
 		vrHelper->GetViewAngles(pparams->viewangles);
 
