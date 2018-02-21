@@ -25,6 +25,7 @@ public:
 	VRTrackedDeviceIndex GetTrackedDeviceIndexForControllerRole(VRTrackedControllerRole role) override;
 	bool PollNextEvent(VREvent& outEvent) override;
 	VRTrackedControllerRole GetControllerRoleForTrackedDeviceIndex(VRTrackedDeviceIndex deviceIndex) override;
+	bool GetControllerState(VRTrackedDeviceIndex controllerDeviceIndex, VRControllerState& outControllerState) override;
 
 public:
 	static VROpenVR& Instance();

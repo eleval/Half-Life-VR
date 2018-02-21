@@ -55,9 +55,8 @@ void VRHelper::Init()
 	}
 	else
 	{
-		vr::EVRInitError vrInitError;
 		vrInterface = &VROpenVR::Instance();
-		if (vrInterface->Init())
+		if (!vrInterface->Init())
 		{
 			Exit(TEXT("Failed to initialize VR enviroment. Make sure your headset is properly connected and SteamVR is running."));
 		}
@@ -97,6 +96,7 @@ void VRHelper::Init()
 	g_vrInput.vr_control_deadzone = gEngfuncs.pfnRegisterVariable("vr_control_deadzone", "0.5", FCVAR_ARCHIVE);
 	g_vrInput.vr_control_teleport = gEngfuncs.pfnRegisterVariable("vr_control_teleport", "0", FCVAR_ARCHIVE);
 	g_vrInput.vr_control_hand = gEngfuncs.pfnRegisterVariable("vr_control_hand", "1", FCVAR_ARCHIVE);
+	g_vrInput.vr_control_scheme = gEngfuncs.pfnRegisterVariable("vr_control_scheme", "1", FCVAR_ARCHIVE);
 }
 
 /*bool VRHelper::AcceptsDisclaimer()
@@ -224,23 +224,23 @@ void VRHelper::PollEvents()
 				VRTrackedControllerRole controllerRole = vrInterface->GetControllerRoleForTrackedDeviceIndex(vrEvent.trackedDeviceIndex);
 				if (controllerRole != VRTrackedControllerRole::Invalid)
 				{
-					vr::VRControllerState_t controllerState;
-					vrInterface->GetControllerState(vrEvent.trackedDeviceIndex, &controllerState, sizeof(controllerState));
+					VRControllerState controllerState;
+					vrInterface->GetControllerState(vrEvent.trackedDeviceIndex, controllerState);
 					g_vrInput.HandleButtonPress(vrEvent.data.controller.button, controllerState, controllerRole == VRTrackedControllerRole::LeftHand, vrEvent.eventType == VREventType::ButtonPress);
 				}
 			}
 			break;
 			case VREventType::ButtonTouch:
 			case VREventType::ButtonUntouch:
-		default:
-			break;
+			default:
+				break;
 		}
 	}
 
 	for (VRTrackedControllerRole controllerRole = VRTrackedControllerRole::LeftHand; controllerRole <= VRTrackedControllerRole::RightHand; ++controllerRole)
 	{
-		vr::VRControllerState_t controllerState;
-		vrInterface->GetControllerState(vrInterface->GetTrackedDeviceIndexForControllerRole(controllerRole), &controllerState, sizeof(controllerState));
+		VRControllerState controllerState;
+		vrInterface->GetControllerState(vrInterface->GetTrackedDeviceIndexForControllerRole(controllerRole), controllerState);
 		g_vrInput.HandleTrackpad(VRButton::SteamVR_Touchpad, controllerState, controllerRole == VRTrackedControllerRole::LeftHand, false);
 	}
 }
@@ -256,9 +256,10 @@ bool VRHelper::UpdatePositions(struct ref_params_s* pparams)
 		if (positions.m_rTrackedDevicePose[VRTrackedDeviceIndex_Hmd].isValid)
 		{
 			//Matrix4 m_mat4SeatedPose = ConvertSteamVRMatrixToMatrix4(vrSystem->GetSeatedZeroPoseToStandingAbsoluteTrackingPose()).invert();
-			Matrix4 m_mat4StandingPose = vrInterface->GetRawZeroPoseToStandingAbsoluteTrackingPose().invert();
+			//Matrix4 m_mat4StandingPose = vrInterface->GetRawZeroPoseToStandingAbsoluteTrackingPose().invert();
 
-			Matrix4 m_mat4HMDPose = positions.m_rTrackedDevicePose[VRTrackedDeviceIndex_Hmd].transform.invert();
+			Matrix4 m_mat4HMDPose = positions.m_rTrackedDevicePose[VRTrackedDeviceIndex_Hmd].transform;
+			m_mat4HMDPose.invert();
 
 			positions.m_mat4LeftProjection = GetHMDMatrixProjectionEye(VREye::Left);
 			positions.m_mat4RightProjection = GetHMDMatrixProjectionEye(VREye::Right);

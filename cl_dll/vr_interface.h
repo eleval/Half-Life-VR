@@ -58,7 +58,7 @@ enum class VREventType
 	ButtonUntouch
 };
 
-enum class VRButton
+enum class VRButton : uint64_t
 {
 	System = 0,
 	ApplicationMenu = 1,
@@ -105,6 +105,30 @@ struct VREvent
 	VREventData data;
 };
 
+struct VRControllerAxis
+{
+	float x; // Ranges from -1.0 to 1.0 for joysticks and track pads. Ranges from 0.0 to 1.0 for triggers were 0 is fully released.
+	float y; // Ranges from -1.0 to 1.0 for joysticks and track pads. Is always 0.0 for triggers.
+};
+
+inline uint64_t VRButtonMaskFromId(VRButton id) { return 1ull << static_cast<uint64_t>(id); }
+
+static const uint32_t VRControllerStateAxisCount = 5;
+
+struct VRControllerState
+{
+	// If packet num matches that on your prior call, then the controller state hasn't been changed since 
+	// your last call and there is no need to process it
+	uint32_t packetNum;
+
+	// bit flags for each of the buttons. Use ButtonMaskFromId to turn an ID into a mask
+	uint64_t buttonPressed;
+	uint64_t buttonTouched;
+
+	// Axis data for the controller's analog inputs
+	VRControllerAxis axis[VRControllerStateAxisCount];
+};
+
 using VRTrackedDeviceIndex = uint32_t;
 static const VRTrackedDeviceIndex VRTrackedDeviceIndex_Hmd = 0;
 static const VRTrackedDeviceIndex VRMaxTrackedDeviceCount = 16;
@@ -128,6 +152,7 @@ public:
 	virtual VRTrackedDeviceIndex GetTrackedDeviceIndexForControllerRole(VRTrackedControllerRole role) = 0;
 	virtual bool PollNextEvent(VREvent& outEvent) = 0;
 	virtual VRTrackedControllerRole GetControllerRoleForTrackedDeviceIndex(VRTrackedDeviceIndex deviceIndex) = 0;
+	virtual bool GetControllerState(VRTrackedDeviceIndex controllerDeviceIndex, VRControllerState& outControllerState) = 0;
 };
 
 #endif

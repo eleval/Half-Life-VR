@@ -124,7 +124,7 @@ bool VROpenVR::Init()
 	vrSystem = vr::VR_Init(&vrInitError, vr::EVRApplicationType::VRApplication_Scene);
 	vrCompositor = vr::VRCompositor();
 
-	return vrInitError != vr::EVRInitError::VRInitError_None || vrSystem == nullptr || vrCompositor == nullptr;
+	return vrInitError == vr::EVRInitError::VRInitError_None && vrSystem != nullptr && vrCompositor != nullptr;
 }
 
 void VROpenVR::Shutdown()
@@ -134,6 +134,7 @@ void VROpenVR::Shutdown()
 
 void VROpenVR::SetTrackingSpace(VRTrackingSpace trackingSpace)
 {
+	vrCompositor->GetCurrentSceneFocusProcess();
 	vrCompositor->SetTrackingSpace(openVRTrackingUniverseOrigin[static_cast<int>(trackingSpace)]);
 }
 
@@ -260,6 +261,25 @@ bool VROpenVR::PollNextEvent(VREvent& outEvent)
 VRTrackedControllerRole VROpenVR::GetControllerRoleForTrackedDeviceIndex(VRTrackedDeviceIndex deviceIndex)
 {
 	return ConvertSteamVRControllerRole(vrSystem->GetControllerRoleForTrackedDeviceIndex(deviceIndex));
+}
+
+bool VROpenVR::GetControllerState(VRTrackedDeviceIndex controllerDeviceIndex, VRControllerState& outControllerState)
+{
+	vr::VRControllerState_t openVRControllerState;
+	if(vrSystem->GetControllerState(controllerDeviceIndex, &openVRControllerState, sizeof(vr::VRControllerState_t)))
+	{
+		outControllerState.packetNum = openVRControllerState.unPacketNum;
+		outControllerState.buttonPressed = openVRControllerState.ulButtonPressed;
+		outControllerState.buttonTouched = openVRControllerState.ulButtonTouched;
+		for (int i = 0; i < vr::k_unControllerStateAxisCount; ++i)
+		{
+			outControllerState.axis[i].x = openVRControllerState.rAxis[i].x;
+			outControllerState.axis[i].y = openVRControllerState.rAxis[i].y;
+		}
+		return true;
+	}
+
+	return false;
 }
 
 //////////////////////////////////////////////////////////////////////////
