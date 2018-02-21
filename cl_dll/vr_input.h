@@ -1,5 +1,7 @@
 #pragma once
 
+#include "vr_interface.h"
+
 class VRInput
 {
 public:
@@ -12,8 +14,8 @@ public:
 	cvar_t	*vr_control_hand;
 
 
-	void HandleButtonPress(unsigned int button, vr::VRControllerState_t controllerState, bool leftOrRight, bool downOrUp);
-	void HandleTrackpad(unsigned int button, vr::VRControllerState_t controllerState, bool leftOrRight, bool downOrUp);
+	void HandleButtonPress(VRButton button, vr::VRControllerState_t controllerState, bool leftOrRight, bool downOrUp);
+	void HandleTrackpad(VRButton button, vr::VRControllerState_t controllerState, bool leftOrRight, bool downOrUp);
 private:
 	bool isTeleActive;
 };

@@ -1,11 +1,13 @@
 #pragma once
 
-#include "openvr/openvr.h"
+#include "vr_interface.h"
+
+#include <vector>
 
 class Positions
 {
 public:
-	vr::TrackedDevicePose_t m_rTrackedDevicePose[vr::k_unMaxTrackedDeviceCount];
+	std::vector<VRTrackedDevicePose> m_rTrackedDevicePose;
 
 	Matrix4 m_mat4LeftProjection;
 	Matrix4 m_mat4RightProjection;
@@ -25,7 +27,7 @@ public:
 	void PollEvents();
 	bool UpdatePositions(struct ref_params_s* pparams);
 	void SubmitImages();
-	void PrepareVRScene(vr::EVREye eEye, struct ref_params_s* pparams);
+	void PrepareVRScene(VREye eEye, struct ref_params_s* pparams);
 	void FinishVRScene(struct ref_params_s* pparams);
 
 	void GetViewAngles(float * angles);
@@ -43,12 +45,8 @@ private:
 	void UpdateGunPosition(struct ref_params_s* pparams);
 	void SendPositionUpdateToServer();
 
-	void SubmitImage(vr::EVREye eEye, unsigned int texture);
-
-	Matrix4 GetHMDMatrixProjectionEye(vr::EVREye eEye);
-	Matrix4 GetHMDMatrixPoseEye(vr::EVREye eEye);
-	Matrix4 ConvertSteamVRMatrixToMatrix4(const vr::HmdMatrix34_t &matPose);
-	Matrix4 ConvertSteamVRMatrixToMatrix4(const vr::HmdMatrix44_t &matPose);
+	Matrix4 GetHMDMatrixProjectionEye(VREye eEye);
+	Matrix4 GetHMDMatrixPoseEye(VREye eEye);
 
 	Vector GetHLViewAnglesFromVRMatrix(const Matrix4 &mat);
 	Vector GetHLAnglesFromVRMatrix(const Matrix4 &mat);
@@ -59,8 +57,7 @@ private:
 
 	bool isVRRoomScale = true;
 
-	vr::IVRSystem *vrSystem = nullptr;
-	vr::IVRCompositor *vrCompositor = nullptr;
+	IVRInterface* vrInterface = nullptr;
 
 	unsigned int vrGLLeftEyeFrameBuffer = 0;
 	unsigned int vrGLRightEyeFrameBuffer = 0;
