@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vr_interface.h"
+#include "vr_system.h"
 
 #include <vector>
 
@@ -57,7 +57,7 @@ private:
 
 	bool isVRRoomScale = true;
 
-	IVRInterface* vrInterface = nullptr;
+	IVRSystem* vrSystem = nullptr;
 
 	unsigned int vrGLLeftEyeFrameBuffer = 0;
 	unsigned int vrGLRightEyeFrameBuffer = 0;

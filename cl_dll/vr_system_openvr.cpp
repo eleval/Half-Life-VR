@@ -4,7 +4,7 @@
 #include "r_studioint.h"
 #include "ref_params.h"
 
-#include "vr_openvr.h"
+#include "vr_system_openvr.h"
 
 #include <cassert>
 
@@ -111,14 +111,14 @@ VRTrackedControllerRole ConvertSteamVRControllerRole(vr::ETrackedControllerRole 
 	}
 }
 
-VROpenVR::VROpenVR() :
+VRSystem_OpenVR::VRSystem_OpenVR() :
 	vrSystem(nullptr),
 	vrCompositor(nullptr)
 {
 
 }
 
-bool VROpenVR::Init()
+bool VRSystem_OpenVR::Init()
 {
 	vr::EVRInitError vrInitError;
 	vrSystem = vr::VR_Init(&vrInitError, vr::EVRApplicationType::VRApplication_Scene);
@@ -127,18 +127,18 @@ bool VROpenVR::Init()
 	return vrInitError == vr::EVRInitError::VRInitError_None && vrSystem != nullptr && vrCompositor != nullptr;
 }
 
-void VROpenVR::Shutdown()
+void VRSystem_OpenVR::Shutdown()
 {
 	vr::VR_Shutdown();
 }
 
-void VROpenVR::SetTrackingSpace(VRTrackingSpace trackingSpace)
+void VRSystem_OpenVR::SetTrackingSpace(VRTrackingSpace trackingSpace)
 {
 	vrCompositor->GetCurrentSceneFocusProcess();
 	vrCompositor->SetTrackingSpace(openVRTrackingUniverseOrigin[static_cast<int>(trackingSpace)]);
 }
 
-void VROpenVR::WaitGetPoses(std::vector<VRTrackedDevicePose>& trackedPoses)
+void VRSystem_OpenVR::WaitGetPoses(std::vector<VRTrackedDevicePose>& trackedPoses)
 {
 	assert(trackedPoses.size() <= vr::k_unMaxTrackedDeviceCount);
 
@@ -156,12 +156,12 @@ void VROpenVR::WaitGetPoses(std::vector<VRTrackedDevicePose>& trackedPoses)
 	}
 }
 
-int VROpenVR::GetMaxTrackedDevices()
+int VRSystem_OpenVR::GetMaxTrackedDevices()
 {
 	return vr::k_unMaxTrackedDeviceCount;
 }
 
-void VROpenVR::SubmitImage(VREye eye, uint32_t textureHandle)
+void VRSystem_OpenVR::SubmitImage(VREye eye, uint32_t textureHandle)
 {
 	vr::Texture_t vrTexture;
 	vrTexture.eType = vr::ETextureType::TextureType_OpenGL;
@@ -171,37 +171,37 @@ void VROpenVR::SubmitImage(VREye eye, uint32_t textureHandle)
 	vrCompositor->Submit(openVREye[static_cast<int>(eye)], &vrTexture);
 }
 
-void VROpenVR::PostPresentHandoff()
+void VRSystem_OpenVR::PostPresentHandoff()
 {
 	vrCompositor->PostPresentHandoff();
 }
 
-void VROpenVR::GetRecommendedRenderTargetSize(uint32_t& outWidth, uint32_t& outHeight)
+void VRSystem_OpenVR::GetRecommendedRenderTargetSize(uint32_t& outWidth, uint32_t& outHeight)
 {
 	vrSystem->GetRecommendedRenderTargetSize(&outWidth, &outHeight);
 }
 
-Matrix4 VROpenVR::GetProjectionMatrix(VREye eye, float nearZ, float farZ)
+Matrix4 VRSystem_OpenVR::GetProjectionMatrix(VREye eye, float nearZ, float farZ)
 {
 	return ConvertSteamVRMatrixToMatrix4(vrSystem->GetProjectionMatrix(openVREye[static_cast<int>(eye)], nearZ, farZ));
 }
 
-Matrix4 VROpenVR::GetEyeToHeadTransform(VREye eye)
+Matrix4 VRSystem_OpenVR::GetEyeToHeadTransform(VREye eye)
 {
 	return ConvertSteamVRMatrixToMatrix4(vrSystem->GetEyeToHeadTransform(openVREye[static_cast<int>(eye)]));
 }
 
-Matrix4 VROpenVR::GetRawZeroPoseToStandingAbsoluteTrackingPose()
+Matrix4 VRSystem_OpenVR::GetRawZeroPoseToStandingAbsoluteTrackingPose()
 {
 	return ConvertSteamVRMatrixToMatrix4(vrSystem->GetRawZeroPoseToStandingAbsoluteTrackingPose());
 }
 
-VRTrackedDeviceIndex VROpenVR::GetTrackedDeviceIndexForControllerRole(VRTrackedControllerRole role)
+VRTrackedDeviceIndex VRSystem_OpenVR::GetTrackedDeviceIndexForControllerRole(VRTrackedControllerRole role)
 {
 	return vrSystem->GetTrackedDeviceIndexForControllerRole(openVRTrackedControllerRole[static_cast<int>(role)]);
 }
 
-bool VROpenVR::PollNextEvent(VREvent& outEvent)
+bool VRSystem_OpenVR::PollNextEvent(VREvent& outEvent)
 {
 	vr::VREvent_t vrEvent;
 	if (vrSystem->PollNextEvent(&vrEvent, sizeof(vr::VREvent_t)))
@@ -258,12 +258,12 @@ bool VROpenVR::PollNextEvent(VREvent& outEvent)
 	return false;
 }
 
-VRTrackedControllerRole VROpenVR::GetControllerRoleForTrackedDeviceIndex(VRTrackedDeviceIndex deviceIndex)
+VRTrackedControllerRole VRSystem_OpenVR::GetControllerRoleForTrackedDeviceIndex(VRTrackedDeviceIndex deviceIndex)
 {
 	return ConvertSteamVRControllerRole(vrSystem->GetControllerRoleForTrackedDeviceIndex(deviceIndex));
 }
 
-bool VROpenVR::GetControllerState(VRTrackedDeviceIndex controllerDeviceIndex, VRControllerState& outControllerState)
+bool VRSystem_OpenVR::GetControllerState(VRTrackedDeviceIndex controllerDeviceIndex, VRControllerState& outControllerState)
 {
 	vr::VRControllerState_t openVRControllerState;
 	if(vrSystem->GetControllerState(controllerDeviceIndex, &openVRControllerState, sizeof(vr::VRControllerState_t)))
@@ -284,8 +284,8 @@ bool VROpenVR::GetControllerState(VRTrackedDeviceIndex controllerDeviceIndex, VR
 
 //////////////////////////////////////////////////////////////////////////
 
-VROpenVR& VROpenVR::Instance()
+VRSystem_OpenVR& VRSystem_OpenVR::Instance()
 {
-	static VROpenVR instance;
+	static VRSystem_OpenVR instance;
 	return instance;
 }

@@ -280,7 +280,7 @@
     <ClCompile Include="Matrices.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="vr_openvr.cpp">
+    <ClCompile Include="vr_system_openvr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -432,10 +432,10 @@
     <ClInclude Include="vr_input.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vr_interface.h">
+    <ClInclude Include="vr_system_openvr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vr_openvr.h">
+    <ClInclude Include="vr_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

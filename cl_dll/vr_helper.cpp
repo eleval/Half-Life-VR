@@ -8,7 +8,7 @@
 #include "vr_helper.h"
 #include "vr_gl.h"
 #include "vr_input.h"
-#include "vr_openvr.h"
+#include "vr_system_openvr.h"
 
 
 #ifndef MAX_COMMAND_SIZE
@@ -55,15 +55,15 @@ void VRHelper::Init()
 	}
 	else
 	{
-		vrInterface = &VROpenVR::Instance();
-		if (!vrInterface->Init())
+		vrSystem = &VRSystem_OpenVR::Instance();
+		if (!vrSystem->Init())
 		{
 			Exit(TEXT("Failed to initialize VR enviroment. Make sure your headset is properly connected and SteamVR is running."));
 		}
 		else
 		{
-			positions.m_rTrackedDevicePose.resize(vrInterface->GetMaxTrackedDevices());
-			vrInterface->GetRecommendedRenderTargetSize(vrRenderWidth, vrRenderHeight);
+			positions.m_rTrackedDevicePose.resize(vrSystem->GetMaxTrackedDevices());
+			vrSystem->GetRecommendedRenderTargetSize(vrRenderWidth, vrRenderHeight);
 			CreateGLTexture(&vrGLLeftEyeTexture, vrRenderWidth, vrRenderHeight);
 			CreateGLTexture(&vrGLRightEyeTexture, vrRenderWidth, vrRenderHeight);
 			int viewport[4];
@@ -110,8 +110,8 @@ void VRHelper::Exit(const char* lpErrorMessage)
 	{
 		MessageBox(NULL, lpErrorMessage, TEXT("Error starting Half-Life: VR"), MB_OK);
 	}
-	vrInterface->Shutdown();
-	vrInterface = nullptr;
+	vrSystem->Shutdown();
+	vrSystem = nullptr;
 	gEngfuncs.pfnClientCmd("quit");
 	std::exit(lpErrorMessage != nullptr ? 1 : 0);
 }
@@ -120,12 +120,12 @@ Matrix4 VRHelper::GetHMDMatrixProjectionEye(VREye eEye)
 {
 	float fNearZ = 0.01f;
 	float fFarZ = 8192.f;
-	return vrInterface->GetProjectionMatrix(eEye, fNearZ, fFarZ);
+	return vrSystem->GetProjectionMatrix(eEye, fNearZ, fFarZ);
 }
 
 Matrix4 VRHelper::GetHMDMatrixPoseEye(VREye nEye)
 {
-	return vrInterface->GetEyeToHeadTransform(nEye).invert();
+	return vrSystem->GetEyeToHeadTransform(nEye).invert();
 }
 
 extern void VectorAngles(const float *forward, float *angles);
@@ -207,7 +207,7 @@ Vector GetPositionInHLSpaceFromAbsoluteTrackingMatrix(const Matrix4 & absoluteTr
 void VRHelper::PollEvents()
 {
 	VREvent vrEvent;
-	while (vrInterface != nullptr && vrInterface->PollNextEvent(vrEvent))
+	while (vrSystem != nullptr && vrSystem->PollNextEvent(vrEvent))
 	{
 		switch (vrEvent.eventType)
 		{
@@ -221,11 +221,11 @@ void VRHelper::PollEvents()
 			case VREventType::ButtonPress:
 			case VREventType::ButtonUnpress:
 			{
-				VRTrackedControllerRole controllerRole = vrInterface->GetControllerRoleForTrackedDeviceIndex(vrEvent.trackedDeviceIndex);
+				VRTrackedControllerRole controllerRole = vrSystem->GetControllerRoleForTrackedDeviceIndex(vrEvent.trackedDeviceIndex);
 				if (controllerRole != VRTrackedControllerRole::Invalid)
 				{
 					VRControllerState controllerState;
-					vrInterface->GetControllerState(vrEvent.trackedDeviceIndex, controllerState);
+					vrSystem->GetControllerState(vrEvent.trackedDeviceIndex, controllerState);
 					g_vrInput.HandleButtonPress(vrEvent.data.controller.button, controllerState, controllerRole == VRTrackedControllerRole::LeftHand, vrEvent.eventType == VREventType::ButtonPress);
 				}
 			}
@@ -240,18 +240,18 @@ void VRHelper::PollEvents()
 	for (VRTrackedControllerRole controllerRole = VRTrackedControllerRole::LeftHand; controllerRole <= VRTrackedControllerRole::RightHand; ++controllerRole)
 	{
 		VRControllerState controllerState;
-		vrInterface->GetControllerState(vrInterface->GetTrackedDeviceIndexForControllerRole(controllerRole), controllerState);
+		vrSystem->GetControllerState(vrSystem->GetTrackedDeviceIndexForControllerRole(controllerRole), controllerState);
 		g_vrInput.HandleTrackpad(VRButton::SteamVR_Touchpad, controllerState, controllerRole == VRTrackedControllerRole::LeftHand, false);
 	}
 }
 
 bool VRHelper::UpdatePositions(struct ref_params_s* pparams)
 {
-	if (vrInterface != nullptr)
+	if (vrSystem != nullptr)
 	{
 		//vrCompositor->GetCurrentSceneFocusProcess();
-		vrInterface->SetTrackingSpace(isVRRoomScale ? VRTrackingSpace::Standing : VRTrackingSpace::Seated);
-		vrInterface->WaitGetPoses(positions.m_rTrackedDevicePose);
+		vrSystem->SetTrackingSpace(isVRRoomScale ? VRTrackingSpace::Standing : VRTrackingSpace::Seated);
+		vrSystem->WaitGetPoses(positions.m_rTrackedDevicePose);
 
 		if (positions.m_rTrackedDevicePose[VRTrackedDeviceIndex_Hmd].isValid)
 		{
@@ -325,9 +325,9 @@ void VRHelper::FinishVRScene(struct ref_params_s* pparams)
 
 void VRHelper::SubmitImages()
 {
-	vrInterface->SubmitImage(VREye::Left, vrGLLeftEyeTexture);
-	vrInterface->SubmitImage(VREye::Right, vrGLRightEyeTexture);
-	vrInterface->PostPresentHandoff();
+	vrSystem->SubmitImage(VREye::Left, vrGLLeftEyeTexture);
+	vrSystem->SubmitImage(VREye::Right, vrGLRightEyeTexture);
+	vrSystem->PostPresentHandoff();
 }
 
 void VRHelper::GetViewAngles(float * angles)
@@ -350,7 +350,7 @@ void VRHelper::UpdateGunPosition(struct ref_params_s* pparams)
 	cl_entity_t *viewent = gEngfuncs.GetViewModel();
 	if (viewent != nullptr)
 	{
-		vr::TrackedDeviceIndex_t controllerIndex = vrInterface->GetTrackedDeviceIndexForControllerRole(VRTrackedControllerRole::RightHand);
+		vr::TrackedDeviceIndex_t controllerIndex = vrSystem->GetTrackedDeviceIndexForControllerRole(VRTrackedControllerRole::RightHand);
 
 		if (controllerIndex > 0 && controllerIndex != VRTrackedDeviceIndexInvalid && positions.m_rTrackedDevicePose[controllerIndex].isValid)
 		{
@@ -394,10 +394,10 @@ void VRHelper::SendPositionUpdateToServer()
 	Vector hmdOffset = GetOffsetInHLSpaceFromAbsoluteTrackingMatrix(positions.m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].transform);
 	hmdOffset.z += localPlayer->curstate.mins.z;
 
-	vr::TrackedDeviceIndex_t leftControllerIndex = vrInterface->GetTrackedDeviceIndexForControllerRole(VRTrackedControllerRole::LeftHand);
+	vr::TrackedDeviceIndex_t leftControllerIndex = vrSystem->GetTrackedDeviceIndexForControllerRole(VRTrackedControllerRole::LeftHand);
 	bool isLeftControllerValid = leftControllerIndex > 0 && leftControllerIndex != vr::k_unTrackedDeviceIndexInvalid && positions.m_rTrackedDevicePose[leftControllerIndex].isValid;
 
-	vr::TrackedDeviceIndex_t rightControllerIndex = vrInterface->GetTrackedDeviceIndexForControllerRole(VRTrackedControllerRole::RightHand);
+	vr::TrackedDeviceIndex_t rightControllerIndex = vrSystem->GetTrackedDeviceIndexForControllerRole(VRTrackedControllerRole::RightHand);
 	bool isRightControllerValid = leftControllerIndex > 0 && leftControllerIndex != vr::k_unTrackedDeviceIndexInvalid && positions.m_rTrackedDevicePose[leftControllerIndex].isValid;
 
 	Vector leftControllerOffset(0, 0, 0);
@@ -455,7 +455,7 @@ void RenderLine(Vector v1, Vector v2, Vector color)
 
 void VRHelper::TestRenderControllerPosition(bool leftOrRight)
 {
- 	VRTrackedDeviceIndex controllerIndex = vrInterface->GetTrackedDeviceIndexForControllerRole(leftOrRight ? VRTrackedControllerRole::LeftHand : VRTrackedControllerRole::RightHand);
+ 	VRTrackedDeviceIndex controllerIndex = vrSystem->GetTrackedDeviceIndexForControllerRole(leftOrRight ? VRTrackedControllerRole::LeftHand : VRTrackedControllerRole::RightHand);
 
 	if (controllerIndex > 0 && controllerIndex != vr::k_unTrackedDeviceIndexInvalid && positions.m_rTrackedDevicePose[controllerIndex].isValid)
 	{

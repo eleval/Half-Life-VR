@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vr_interface.h"
+#include "vr_system.h"
 
 class VRInput
 {

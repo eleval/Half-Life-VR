@@ -1,5 +1,5 @@
-#ifndef __VR_INTERFACE_H__
-#define __VR_INTERFACE_H__
+#ifndef __VR_SYSTEM_H__
+#define __VR_SYSTEM_H__
 
 #include "Matrices.h"
 
@@ -135,7 +135,7 @@ static const VRTrackedDeviceIndex VRMaxTrackedDeviceCount = 16;
 static const VRTrackedDeviceIndex VRTrackedDeviceIndexOther = 0xFFFFFFFE;
 static const VRTrackedDeviceIndex VRTrackedDeviceIndexInvalid = 0xFFFFFFFF;
 
-class IVRInterface
+class IVRSystem
 {
 public:
 	virtual bool Init() = 0;

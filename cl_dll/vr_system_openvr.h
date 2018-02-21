@@ -1,14 +1,14 @@
-#ifndef __VR_OPENVR_H__
-#define __VR_OPENVR_H__
+#ifndef __VR_SYSTEM_OPENVR_H__
+#define __VR_SYSTEM_OPENVR_H__
 
-#include "vr_interface.h"
+#include "vr_system.h"
 
 #include "openvr/openvr.h"
 
-class VROpenVR final : public IVRInterface
+class VRSystem_OpenVR final : public IVRSystem
 {
 private:
-	VROpenVR();
+	VRSystem_OpenVR();
 
 public:
 	bool Init() override;
@@ -28,7 +28,7 @@ public:
 	bool GetControllerState(VRTrackedDeviceIndex controllerDeviceIndex, VRControllerState& outControllerState) override;
 
 public:
-	static VROpenVR& Instance();
+	static VRSystem_OpenVR& Instance();
 
 private:
 	vr::IVRSystem* vrSystem;
