@@ -9,7 +9,7 @@
 #include "vr_gl.h"
 #include "vr_input.h"
 #include "vr_system_openvr.h"
-
+#include "vr_system_fake.h"
 
 #ifndef MAX_COMMAND_SIZE
 #define MAX_COMMAND_SIZE 256
@@ -23,6 +23,7 @@ const float FLOOR_OFFSET = 10;
 
 cvar_t *vr_weapontilt;
 cvar_t *vr_roomcrouch;
+cvar_t* vr_systemType;
 
 
 VRHelper::VRHelper()
@@ -37,6 +38,18 @@ VRHelper::~VRHelper()
 
 void VRHelper::Init()
 {
+	//Register Helper convars
+	vr_weapontilt = gEngfuncs.pfnRegisterVariable("vr_weapontilt", "-25", FCVAR_ARCHIVE);
+	vr_roomcrouch = gEngfuncs.pfnRegisterVariable("vr_roomcrouch", "1", FCVAR_ARCHIVE);
+	vr_systemType = gEngfuncs.pfnRegisterVariable("vr_systemType", "0", FCVAR_ARCHIVE);
+
+	//Register Input convars 
+	g_vrInput.vr_control_alwaysforward = gEngfuncs.pfnRegisterVariable("vr_control_alwaysforward", "0", FCVAR_ARCHIVE);
+	g_vrInput.vr_control_deadzone = gEngfuncs.pfnRegisterVariable("vr_control_deadzone", "0.5", FCVAR_ARCHIVE);
+	g_vrInput.vr_control_teleport = gEngfuncs.pfnRegisterVariable("vr_control_teleport", "0", FCVAR_ARCHIVE);
+	g_vrInput.vr_control_hand = gEngfuncs.pfnRegisterVariable("vr_control_hand", "1", FCVAR_ARCHIVE);
+	g_vrInput.vr_control_scheme = gEngfuncs.pfnRegisterVariable("vr_control_scheme", "1", FCVAR_ARCHIVE);
+
 	/*if (!AcceptsDisclaimer())
 	{
 		Exit();
@@ -55,7 +68,15 @@ void VRHelper::Init()
 	}
 	else
 	{
-		vrSystem = &VRSystem_OpenVR::Instance();
+		if (vr_systemType->value == 0.0f)
+		{
+			vrSystem = &VRSystem_OpenVR::Instance();
+		}
+		else
+		{
+			vrSystem = &VRSystem_Fake::Instance();
+		}
+		
 		if (!vrSystem->Init())
 		{
 			Exit(TEXT("Failed to initialize VR enviroment. Make sure your headset is properly connected and SteamVR is running."));
@@ -85,18 +106,6 @@ void VRHelper::Init()
 			}
 		}
 	}
-
-	//Register Helper convars
-	vr_weapontilt = gEngfuncs.pfnRegisterVariable("vr_weapontilt", "-25", FCVAR_ARCHIVE);
-	vr_roomcrouch = gEngfuncs.pfnRegisterVariable("vr_roomcrouch", "1", FCVAR_ARCHIVE);
-
-
-	//Register Input convars 
-	g_vrInput.vr_control_alwaysforward = gEngfuncs.pfnRegisterVariable("vr_control_alwaysforward", "0", FCVAR_ARCHIVE);
-	g_vrInput.vr_control_deadzone = gEngfuncs.pfnRegisterVariable("vr_control_deadzone", "0.5", FCVAR_ARCHIVE);
-	g_vrInput.vr_control_teleport = gEngfuncs.pfnRegisterVariable("vr_control_teleport", "0", FCVAR_ARCHIVE);
-	g_vrInput.vr_control_hand = gEngfuncs.pfnRegisterVariable("vr_control_hand", "1", FCVAR_ARCHIVE);
-	g_vrInput.vr_control_scheme = gEngfuncs.pfnRegisterVariable("vr_control_scheme", "1", FCVAR_ARCHIVE);
 }
 
 /*bool VRHelper::AcceptsDisclaimer()
