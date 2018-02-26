@@ -35,6 +35,8 @@ extern globalvars_t *gpGlobals;
 
 VRRenderer gVRRenderer;
 
+cvar_t* vr_renderWorldBackface;
+
 
 VRRenderer::VRRenderer()
 {
@@ -49,6 +51,7 @@ VRRenderer::~VRRenderer()
 
 void VRRenderer::Init()
 {
+	vr_renderWorldBackface = gEngfuncs.pfnRegisterVariable("vr_renderWorldBackface", "1", FCVAR_ARCHIVE);
 	vrHelper->Init();
 }
 
@@ -149,6 +152,11 @@ void VRRenderer::GetWalkAngles(float * angles)
 // This method just draws the backfaces of the entire map in black, so the player can't peak "through" walls with their VR headset
 void VRRenderer::RenderWorldBackfaces()
 {
+	if (vr_renderWorldBackface->value == 0.0f)
+	{
+		return;
+	}
+
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -181,6 +189,11 @@ void VRRenderer::RenderWorldBackfaces()
 
 void VRRenderer::RenderBSPBackfaces(model_t* model)
 {
+	if (vr_renderWorldBackface->value == 0.0f)
+	{
+		return;
+	}
+
 	for (int i = 0; i < model->nummodelsurfaces; i++)
 	{
 		int surfaceIndex = model->firstmodelsurface + i;
