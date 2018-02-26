@@ -482,8 +482,8 @@ Matrix4& Matrix4::rotate(float angle, const Vector3& axis)
 
 Matrix4& Matrix4::rotate(float angle, float x, float y, float z)
 {
-	float c = cosf(angle * DEG2RAD);    // cosine
-	float s = sinf(angle * DEG2RAD);    // sine
+	float c = cosf(angle);    // cosine
+	float s = sinf(angle);    // sine
 	float c1 = 1.0f - c;                // 1 - c
 	float m0 = m[0], m4 = m[4], m8 = m[8], m12 = m[12],
 		m1 = m[1], m5 = m[5], m9 = m[9], m13 = m[13],
@@ -519,8 +519,8 @@ Matrix4& Matrix4::rotate(float angle, float x, float y, float z)
 
 Matrix4& Matrix4::rotateX(float angle)
 {
-	float c = cosf(angle * DEG2RAD);
-	float s = sinf(angle * DEG2RAD);
+	float c = cosf(angle);
+	float s = sinf(angle);
 	float m1 = m[1], m2 = m[2],
 		m5 = m[5], m6 = m[6],
 		m9 = m[9], m10 = m[10],
@@ -540,8 +540,8 @@ Matrix4& Matrix4::rotateX(float angle)
 
 Matrix4& Matrix4::rotateY(float angle)
 {
-	float c = cosf(angle * DEG2RAD);
-	float s = sinf(angle * DEG2RAD);
+	float c = cosf(angle);
+	float s = sinf(angle);
 	float m0 = m[0], m2 = m[2],
 		m4 = m[4], m6 = m[6],
 		m8 = m[8], m10 = m[10],
@@ -561,8 +561,8 @@ Matrix4& Matrix4::rotateY(float angle)
 
 Matrix4& Matrix4::rotateZ(float angle)
 {
-	float c = cosf(angle * DEG2RAD);
-	float s = sinf(angle * DEG2RAD);
+	float c = cosf(angle);
+	float s = sinf(angle);
 	float m0 = m[0], m1 = m[1],
 		m4 = m[4], m5 = m[5],
 		m8 = m[8], m9 = m[9],
