@@ -21,8 +21,28 @@ extern "C"
 	void DLLEXPORT IN_ClearStates (void);
 }
 
-void IN_ActivateMouse() {}
-void IN_DeactivateMouse() {}
+int	mouseactive;
+
+/*
+===========
+IN_ActivateMouse
+===========
+*/
+void DLLEXPORT IN_ActivateMouse(void)
+{
+	mouseactive = 1;
+}
+
+/*
+===========
+IN_DeactivateMouse
+===========
+*/
+void DLLEXPORT IN_DeactivateMouse(void)
+{
+	mouseactive = 0;
+}
+
 void IN_MouseEvent(int mstate) {}
 void IN_Accumulate() {}
 void IN_ClearStates() {}
