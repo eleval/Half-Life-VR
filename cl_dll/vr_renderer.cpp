@@ -52,8 +52,8 @@ VRRenderer::~VRRenderer()
 
 void VRRenderer::Init()
 {
-	vr_renderWorldBackface = gEngfuncs.pfnRegisterVariable("vr_renderWorldBackface", "1", FCVAR_ARCHIVE);
-	vr_renderControllerAxis = gEngfuncs.pfnRegisterVariable("vr_renderControllerAxis", "1", FCVAR_ARCHIVE);
+	vr_renderWorldBackface = gEngfuncs.pfnRegisterVariable("vr_renderWorldBackface", "1", 0);
+	vr_renderControllerAxis = gEngfuncs.pfnRegisterVariable("vr_renderControllerAxis", "1", 0);
 	vrHelper->Init();
 }
 
@@ -126,6 +126,9 @@ void VRRenderer::DrawNormal()
 		vrHelper->TestRenderControllerPosition(true);
 		vrHelper->TestRenderControllerPosition(false);
 	}
+
+	//cl_entity_t *localPlayer = gEngfuncs.GetLocalPlayer();
+	//localPlayer->origin
 
 	RenderWorldBackfaces();
 
