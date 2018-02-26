@@ -36,6 +36,7 @@ extern globalvars_t *gpGlobals;
 VRRenderer gVRRenderer;
 
 cvar_t* vr_renderWorldBackface;
+cvar_t* vr_renderControllerAxis;
 
 
 VRRenderer::VRRenderer()
@@ -52,6 +53,7 @@ VRRenderer::~VRRenderer()
 void VRRenderer::Init()
 {
 	vr_renderWorldBackface = gEngfuncs.pfnRegisterVariable("vr_renderWorldBackface", "1", FCVAR_ARCHIVE);
+	vr_renderControllerAxis = gEngfuncs.pfnRegisterVariable("vr_renderControllerAxis", "1", FCVAR_ARCHIVE);
 	vrHelper->Init();
 }
 
@@ -119,8 +121,12 @@ void VRRenderer::DrawNormal()
 {
 	glPushAttrib(GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT | GL_ENABLE_BIT | GL_POLYGON_BIT | GL_TEXTURE_BIT);
 
-	vrHelper->TestRenderControllerPosition(true);
-	vrHelper->TestRenderControllerPosition(false);
+	if (vr_renderControllerAxis->value == 1.0f)
+	{
+		vrHelper->TestRenderControllerPosition(true);
+		vrHelper->TestRenderControllerPosition(false);
+	}
+
 	RenderWorldBackfaces();
 
 	glPopAttrib();
