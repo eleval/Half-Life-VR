@@ -35,8 +35,12 @@ public:
 
 	void GetWalkAngles(float * angles);
 
-	void TestRenderControllerPosition(bool leftOrRight);
+	Matrix4 GetDeviceTransform(VRTrackedDeviceIndex deviceIndex);
+	Matrix4 GetDeviceAbsoluteTransform(VRTrackedDeviceIndex deviceIndex);
 
+	void Recenter();
+
+	void TestRenderControllerPosition(bool leftOrRight);
 private:
 
 	bool AcceptsDisclaimer();
@@ -54,6 +58,9 @@ private:
 	Positions positions;
 
 	Vector walkAngles;
+
+	Matrix4 centerTransform;
+	Matrix4 invertCenterTransform;
 
 	bool isVRRoomScale = true;
 

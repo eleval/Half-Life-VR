@@ -28,6 +28,10 @@ cvar_t *vr_roomcrouch;
 cvar_t* vr_systemType;
 cvar_t* vr_showPlayer;
 
+void VR_Recenter()
+{
+	gVRHelper.Recenter();
+}
 
 VRHelper::VRHelper()
 {
@@ -41,6 +45,8 @@ VRHelper::~VRHelper()
 
 void VRHelper::Init()
 {
+	gEngfuncs.pfnAddCommand("vr_recenter", VR_Recenter);
+
 	//Register Helper convars
 	vr_weapontilt = gEngfuncs.pfnRegisterVariable("vr_weapontilt", "-25", FCVAR_ARCHIVE);
 	vr_roomcrouch = gEngfuncs.pfnRegisterVariable("vr_roomcrouch", "1", FCVAR_ARCHIVE);
@@ -276,7 +282,7 @@ bool VRHelper::UpdatePositions(struct ref_params_s* pparams)
 			//Matrix4 m_mat4SeatedPose = ConvertSteamVRMatrixToMatrix4(vrSystem->GetSeatedZeroPoseToStandingAbsoluteTrackingPose()).invert();
 			//Matrix4 m_mat4StandingPose = vrInterface->GetRawZeroPoseToStandingAbsoluteTrackingPose().invert();
 
-			Matrix4 m_mat4HMDPose = positions.m_rTrackedDevicePose[VRTrackedDeviceIndex_Hmd].transform;
+			Matrix4 m_mat4HMDPose = GetDeviceTransform(VRTrackedDeviceIndex_Hmd);
 			m_mat4HMDPose.invert();
 
 			positions.m_mat4LeftProjection = GetHMDMatrixProjectionEye(VREye::Left);
@@ -360,7 +366,7 @@ void VRHelper::GetWalkAngles(float * angles)
 
 void VRHelper::GetViewOrg(float * org)
 {
-	GetPositionInHLSpaceFromAbsoluteTrackingMatrix(positions.m_rTrackedDevicePose[VRTrackedDeviceIndex_Hmd].transform).CopyToArray(org);
+	GetPositionInHLSpaceFromAbsoluteTrackingMatrix(GetDeviceTransform(VRTrackedDeviceIndex_Hmd)).CopyToArray(org);
 }
 
 void VRHelper::UpdateGunPosition(struct ref_params_s* pparams)
@@ -368,11 +374,11 @@ void VRHelper::UpdateGunPosition(struct ref_params_s* pparams)
 	cl_entity_t *viewent = gEngfuncs.GetViewModel();
 	if (viewent != nullptr)
 	{
-		vr::TrackedDeviceIndex_t controllerIndex = vrSystem->GetTrackedDeviceIndexForControllerRole(VRTrackedControllerRole::RightHand);
+		VRTrackedDeviceIndex controllerIndex = vrSystem->GetTrackedDeviceIndexForControllerRole(VRTrackedControllerRole::RightHand);
 
 		if (controllerIndex > 0 && controllerIndex != VRTrackedDeviceIndexInvalid && positions.m_rTrackedDevicePose[controllerIndex].isValid)
 		{
-			Matrix4 controllerAbsoluteTrackingMatrix = positions.m_rTrackedDevicePose[controllerIndex].transform;
+			Matrix4 controllerAbsoluteTrackingMatrix = GetDeviceTransform(controllerIndex);
 
 			Vector4 originInVRSpace = controllerAbsoluteTrackingMatrix * Vector4(0, 0, 0, 1);
 			Vector originInRelativeHLSpace(originInVRSpace.x * VR_TO_HL.x * 10, -originInVRSpace.z * VR_TO_HL.z * 10, originInVRSpace.y * VR_TO_HL.y * 10);
@@ -409,20 +415,20 @@ void VRHelper::SendPositionUpdateToServer()
 	cl_entity_t *localPlayer = gEngfuncs.GetLocalPlayer();
 	cl_entity_t *viewent = gEngfuncs.GetViewModel();
 
-	Vector hmdOffset = GetOffsetInHLSpaceFromAbsoluteTrackingMatrix(positions.m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].transform);
+	Vector hmdOffset = GetOffsetInHLSpaceFromAbsoluteTrackingMatrix(GetDeviceTransform(VRTrackedDeviceIndex_Hmd));
 	hmdOffset.z += localPlayer->curstate.mins.z;
 
-	vr::TrackedDeviceIndex_t leftControllerIndex = vrSystem->GetTrackedDeviceIndexForControllerRole(VRTrackedControllerRole::LeftHand);
-	bool isLeftControllerValid = leftControllerIndex > 0 && leftControllerIndex != vr::k_unTrackedDeviceIndexInvalid && positions.m_rTrackedDevicePose[leftControllerIndex].isValid;
+	VRTrackedDeviceIndex leftControllerIndex = vrSystem->GetTrackedDeviceIndexForControllerRole(VRTrackedControllerRole::LeftHand);
+	bool isLeftControllerValid = leftControllerIndex > 0 && leftControllerIndex != VRTrackedDeviceIndexInvalid && positions.m_rTrackedDevicePose[leftControllerIndex].isValid;
 
-	vr::TrackedDeviceIndex_t rightControllerIndex = vrSystem->GetTrackedDeviceIndexForControllerRole(VRTrackedControllerRole::RightHand);
-	bool isRightControllerValid = leftControllerIndex > 0 && leftControllerIndex != vr::k_unTrackedDeviceIndexInvalid && positions.m_rTrackedDevicePose[leftControllerIndex].isValid;
+	VRTrackedDeviceIndex rightControllerIndex = vrSystem->GetTrackedDeviceIndexForControllerRole(VRTrackedControllerRole::RightHand);
+	bool isRightControllerValid = leftControllerIndex > 0 && leftControllerIndex != VRTrackedDeviceIndexInvalid && positions.m_rTrackedDevicePose[leftControllerIndex].isValid;
 
 	Vector leftControllerOffset(0, 0, 0);
 	Vector leftControllerAngles(0, 0, 0);
 	if (isLeftControllerValid)
 	{
-		Matrix4 leftControllerAbsoluteTrackingMatrix = positions.m_rTrackedDevicePose[leftControllerIndex].transform;
+		Matrix4 leftControllerAbsoluteTrackingMatrix = GetDeviceTransform(leftControllerIndex);
 		leftControllerOffset = GetOffsetInHLSpaceFromAbsoluteTrackingMatrix(leftControllerAbsoluteTrackingMatrix);
 		leftControllerOffset.z += localPlayer->curstate.mins.z;
 		leftControllerAngles = GetHLAnglesFromVRMatrix(leftControllerAbsoluteTrackingMatrix);
@@ -460,6 +466,27 @@ void VRHelper::SendPositionUpdateToServer()
 	gEngfuncs.pfnClientCmd(cmd);
 }
 
+Matrix4 VRHelper::GetDeviceTransform(VRTrackedDeviceIndex deviceIndex)
+{
+	return invertCenterTransform * positions.m_rTrackedDevicePose[deviceIndex].transform;
+}
+
+Matrix4 VRHelper::GetDeviceAbsoluteTransform(VRTrackedDeviceIndex deviceIndex)
+{
+	return positions.m_rTrackedDevicePose[deviceIndex].transform;
+}
+
+void VRHelper::Recenter()
+{
+	Matrix4 hmdTransform = GetDeviceAbsoluteTransform(VRTrackedDeviceIndex_Hmd);
+	centerTransform.identity();
+	Vector3 centerTranslation;
+	centerTranslation = hmdTransform.getTranslation();
+	centerTranslation.y = 0.0f; // Ignore height difference
+	centerTransform.translate(centerTranslation);
+	invertCenterTransform = centerTransform;
+	invertCenterTransform.invert();
+}
 
 void RenderLine(Vector v1, Vector v2, Vector color)
 {
@@ -476,9 +503,9 @@ void VRHelper::TestRenderControllerPosition(bool leftOrRight)
 {
  	VRTrackedDeviceIndex controllerIndex = vrSystem->GetTrackedDeviceIndexForControllerRole(leftOrRight ? VRTrackedControllerRole::LeftHand : VRTrackedControllerRole::RightHand);
 
-	if (controllerIndex > 0 && controllerIndex != vr::k_unTrackedDeviceIndexInvalid && positions.m_rTrackedDevicePose[controllerIndex].isValid)
+	if (controllerIndex > 0 && controllerIndex != VRTrackedDeviceIndexInvalid && positions.m_rTrackedDevicePose[controllerIndex].isValid)
 	{
-		Matrix4 controllerAbsoluteTrackingMatrix = positions.m_rTrackedDevicePose[controllerIndex].transform;
+		Matrix4 controllerAbsoluteTrackingMatrix = GetDeviceTransform(controllerIndex);
 
 		Vector originInHLSpace = GetPositionInHLSpaceFromAbsoluteTrackingMatrix(controllerAbsoluteTrackingMatrix);
 		
