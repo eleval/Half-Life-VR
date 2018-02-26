@@ -218,9 +218,8 @@ Vector GetPositionInHLSpaceFromAbsoluteTrackingMatrix(const Matrix4 & absoluteTr
 
 	cl_entity_t *localPlayer = gEngfuncs.GetLocalPlayer();
 	Vector clientGroundPosition = localPlayer->curstate.origin;
-	clientGroundPosition.z += localPlayer->curstate.mins.z;
 
-	return clientGroundPosition + originInRelativeHLSpace;
+	return localPlayer->curstate.origin + originInRelativeHLSpace;
 }
 
 void VRHelper::PollEvents()
@@ -384,9 +383,7 @@ void VRHelper::UpdateGunPosition(struct ref_params_s* pparams)
 			Vector originInRelativeHLSpace(originInVRSpace.x * VR_TO_HL.x * 10, -originInVRSpace.z * VR_TO_HL.z * 10, originInVRSpace.y * VR_TO_HL.y * 10);
 
 			cl_entity_t *localPlayer = gEngfuncs.GetLocalPlayer();
-			Vector clientGroundPosition = localPlayer->curstate.origin;
-			clientGroundPosition.z += localPlayer->curstate.mins.z;
-			Vector originInHLSpace = clientGroundPosition + originInRelativeHLSpace;
+			Vector originInHLSpace = localPlayer->curstate.origin + originInRelativeHLSpace;
 
 			VectorCopy(originInHLSpace, viewent->origin);
 			VectorCopy(originInHLSpace, viewent->curstate.origin);
@@ -482,7 +479,9 @@ void VRHelper::Recenter()
 	centerTransform.identity();
 	Vector3 centerTranslation;
 	centerTranslation = hmdTransform.getTranslation();
-	centerTranslation.y = 0.0f; // Ignore height difference
+
+	cl_entity_t *localPlayer = gEngfuncs.GetLocalPlayer();
+	centerTranslation.y += (localPlayer->curstate.mins.z * HL_TO_VR.z * 0.1f); // Ignore height difference
 	centerTransform.translate(centerTranslation);
 	invertCenterTransform = centerTransform;
 	invertCenterTransform.invert();
