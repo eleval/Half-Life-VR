@@ -6,6 +6,7 @@
 #include "Matrices.h"
 
 #include <array>
+#include <queue>
 
 class VRSystem_Fake final : public IVRSystem
 {
@@ -17,9 +18,9 @@ class VRSystem_Fake final : public IVRSystem
 	};
 
 	static const int FakeDevicesCount = 3; // Headset and two controllers
-	static const int FakeHeadsetIdx = 0;
-	static const int FakePrimaryControllerIdx = 1;
-	static const int FakeSecondaryControllerIdx = 2;
+	static const VRTrackedDeviceIndex FakeHeadsetIdx = 0;
+	static const VRTrackedDeviceIndex FakeLeftHandControllerIdx = 1;
+	static const VRTrackedDeviceIndex FakeRightHandControllerIdx = 2;
 
 private:
 	VRSystem_Fake();
@@ -27,6 +28,7 @@ private:
 public:
 	bool Init() override;
 	void Shutdown() override;
+	void Update() override;
 	void SetTrackingSpace(VRTrackingSpace trackingSpace) override;
 	void WaitGetPoses(std::vector<VRTrackedDevicePose>& trackedPoses) override;
 	int GetMaxTrackedDevices() override;
@@ -45,7 +47,17 @@ public:
 	static VRSystem_Fake& Instance();
 
 private:
+	void SetControllerButtonState(VRControllerState& controller, VRButton button, bool pressed);
+
+private:
 	std::array<VRFakeDevice, FakeDevicesCount> fakeDevices;
+	std::array<VRControllerState, FakeDevicesCount> fakeControllers;
+
+	std::queue<VREvent> eventQueue;
+
+	float prevTime;
+	int controlledDeviceIdx;
+	bool justChangedControlledDevice;
 };
 
 #endif

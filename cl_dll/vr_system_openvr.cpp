@@ -132,6 +132,11 @@ void VRSystem_OpenVR::Shutdown()
 	vr::VR_Shutdown();
 }
 
+void VRSystem_OpenVR::Update()
+{
+
+}
+
 void VRSystem_OpenVR::SetTrackingSpace(VRTrackingSpace trackingSpace)
 {
 	vrCompositor->GetCurrentSceneFocusProcess();

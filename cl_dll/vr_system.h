@@ -140,6 +140,7 @@ class IVRSystem
 public:
 	virtual bool Init() = 0;
 	virtual void Shutdown() = 0;
+	virtual void Update() = 0;
 	virtual void SetTrackingSpace(VRTrackingSpace trackingSpace) = 0;
 	virtual void WaitGetPoses(std::vector<VRTrackedDevicePose>& trackedPoses) = 0;
 	virtual int GetMaxTrackedDevices() = 0;

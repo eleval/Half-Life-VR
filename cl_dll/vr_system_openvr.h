@@ -13,6 +13,7 @@ private:
 public:
 	bool Init() override;
 	void Shutdown() override;
+	void Update() override;
 	void SetTrackingSpace(VRTrackingSpace trackingSpace) override;
 	void WaitGetPoses(std::vector<VRTrackedDevicePose>& trackedPoses) override;
 	int GetMaxTrackedDevices() override;

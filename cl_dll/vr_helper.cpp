@@ -41,7 +41,7 @@ void VRHelper::Init()
 	//Register Helper convars
 	vr_weapontilt = gEngfuncs.pfnRegisterVariable("vr_weapontilt", "-25", FCVAR_ARCHIVE);
 	vr_roomcrouch = gEngfuncs.pfnRegisterVariable("vr_roomcrouch", "1", FCVAR_ARCHIVE);
-	vr_systemType = gEngfuncs.pfnRegisterVariable("vr_systemType", "0", FCVAR_ARCHIVE);
+	vr_systemType = gEngfuncs.pfnRegisterVariable("vr_systemType", "1", FCVAR_ARCHIVE);
 
 	//Register Input convars 
 	g_vrInput.vr_control_alwaysforward = gEngfuncs.pfnRegisterVariable("vr_control_alwaysforward", "0", FCVAR_ARCHIVE);
@@ -215,6 +215,11 @@ Vector GetPositionInHLSpaceFromAbsoluteTrackingMatrix(const Matrix4 & absoluteTr
 
 void VRHelper::PollEvents()
 {
+	if (vrSystem != nullptr)
+	{
+		vrSystem->Update();
+	}
+
 	VREvent vrEvent;
 	while (vrSystem != nullptr && vrSystem->PollNextEvent(vrEvent))
 	{
@@ -454,6 +459,7 @@ void VRHelper::SendPositionUpdateToServer()
 
 void RenderLine(Vector v1, Vector v2, Vector color)
 {
+	glLineWidth(3.0f);
 	glColor4f(color.x, color.y, color.z, 1.0f);
 	glBegin(GL_LINES);
 	glVertex3f(v1.x, v1.y, v1.z);
