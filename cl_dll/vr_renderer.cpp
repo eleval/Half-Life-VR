@@ -41,20 +41,17 @@ cvar_t* vr_renderControllerAxis;
 
 VRRenderer::VRRenderer()
 {
-	vrHelper = new VRHelper();
 }
 
 VRRenderer::~VRRenderer()
 {
-	delete vrHelper;
-	vrHelper = nullptr;
 }
 
 void VRRenderer::Init()
 {
 	vr_renderWorldBackface = gEngfuncs.pfnRegisterVariable("vr_renderWorldBackface", "1", 0);
 	vr_renderControllerAxis = gEngfuncs.pfnRegisterVariable("vr_renderControllerAxis", "1", 0);
-	vrHelper->Init();
+	gVRHelper.Init();
 }
 
 void VRRenderer::VidInit()
@@ -81,33 +78,33 @@ void VRRenderer::Frame(double time)
 		isInMenu = true;
 	}
 
-	vrHelper->PollEvents();
+	gVRHelper.PollEvents();
 }
 
 void VRRenderer::CalcRefdef(struct ref_params_s* pparams)
 {
 	if (pparams->nextView == 0)
 	{
-		vrHelper->UpdatePositions(pparams);
-		vrHelper->PrepareVRScene(VREye::Left, pparams);
-		vrHelper->GetViewOrg(pparams->vieworg);
-		vrHelper->GetViewAngles(pparams->viewangles);
+		gVRHelper.UpdatePositions(pparams);
+		gVRHelper.PrepareVRScene(VREye::Left, pparams);
+		gVRHelper.GetViewOrg(pparams->vieworg);
+		gVRHelper.GetViewAngles(pparams->viewangles);
 
 		pparams->nextView = 1;
 	}
 	else if (pparams->nextView == 1)
 	{
-		vrHelper->FinishVRScene(pparams);
-		vrHelper->PrepareVRScene(VREye::Right, pparams);
-		vrHelper->GetViewOrg(pparams->vieworg);
-		vrHelper->GetViewAngles(pparams->viewangles);
+		gVRHelper.FinishVRScene(pparams);
+		gVRHelper.PrepareVRScene(VREye::Right, pparams);
+		gVRHelper.GetViewOrg(pparams->vieworg);
+		gVRHelper.GetViewAngles(pparams->viewangles);
 
 		pparams->nextView = 2;
 	}
 	else
 	{
-		vrHelper->FinishVRScene(pparams);
-		vrHelper->SubmitImages();
+		gVRHelper.FinishVRScene(pparams);
+		gVRHelper.SubmitImages();
 
 		pparams->nextView = 0;
 		//pparams->onlyClientDraw = 1;
@@ -123,8 +120,8 @@ void VRRenderer::DrawNormal()
 
 	if (vr_renderControllerAxis->value == 1.0f)
 	{
-		vrHelper->TestRenderControllerPosition(true);
-		vrHelper->TestRenderControllerPosition(false);
+		gVRHelper.TestRenderControllerPosition(true);
+		gVRHelper.TestRenderControllerPosition(false);
 	}
 
 	//cl_entity_t *localPlayer = gEngfuncs.GetLocalPlayer();
@@ -150,12 +147,12 @@ void VRRenderer::InterceptHUDRedraw(float time, int intermission)
 
 void VRRenderer::GetViewAngles(float * angles)
 {
-	vrHelper->GetViewAngles(angles);
+	gVRHelper.GetViewAngles(angles);
 }
 
 void VRRenderer::GetWalkAngles(float * angles)
 {
-	vrHelper->GetWalkAngles(angles);
+	gVRHelper.GetWalkAngles(angles);
 }
 
 // This method just draws the backfaces of the entire map in black, so the player can't peak "through" walls with their VR headset

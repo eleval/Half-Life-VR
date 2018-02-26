@@ -71,3 +71,5 @@ private:
 	unsigned int vrRenderWidth = 0;
 	unsigned int vrRenderHeight = 0;
 };
+
+extern VRHelper gVRHelper;

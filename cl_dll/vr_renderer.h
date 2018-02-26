@@ -1,7 +1,5 @@
 #pragma once
 
-class VRHelper;
-
 class VRRenderer
 {
 public:
@@ -32,8 +30,6 @@ private:
 	unsigned int vrGLHUDTexture = 0;
 
 	bool isInMenu = true;
-
-	VRHelper *vrHelper = nullptr;
 };
 
 extern VRRenderer gVRRenderer;
