@@ -416,7 +416,10 @@ float Matrix4::getDeterminant()
 		m[3] * getCofactor(m[4], m[5], m[6], m[8], m[9], m[10], m[12], m[13], m[14]);
 }
 
-
+Vector3 Matrix4::getTranslation() const
+{
+	return Vector3(m[12], m[13], m[14]);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // compute cofactor of 3x3 minor matrix without sign

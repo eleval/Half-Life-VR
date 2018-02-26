@@ -161,6 +161,8 @@ public:
 	const float* getTranspose();                        // return transposed matrix
 	float        getDeterminant();
 
+	Vector3		getTranslation() const;
+
 	Matrix4&    identity();
 	Matrix4&    transpose();                            // transpose itself and return reference
 	Matrix4&    invert();                               // check best inverse method before inverse
