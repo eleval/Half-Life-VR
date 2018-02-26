@@ -24,6 +24,7 @@ const float FLOOR_OFFSET = 10;
 cvar_t *vr_weapontilt;
 cvar_t *vr_roomcrouch;
 cvar_t* vr_systemType;
+cvar_t* vr_showPlayer;
 
 
 VRHelper::VRHelper()
@@ -42,6 +43,7 @@ void VRHelper::Init()
 	vr_weapontilt = gEngfuncs.pfnRegisterVariable("vr_weapontilt", "-25", FCVAR_ARCHIVE);
 	vr_roomcrouch = gEngfuncs.pfnRegisterVariable("vr_roomcrouch", "1", FCVAR_ARCHIVE);
 	vr_systemType = gEngfuncs.pfnRegisterVariable("vr_systemType", "1", FCVAR_ARCHIVE);
+	vr_showPlayer = gEngfuncs.pfnRegisterVariable("vr_showPlayer", "0", 0);
 
 	//Register Input convars 
 	g_vrInput.vr_control_alwaysforward = gEngfuncs.pfnRegisterVariable("vr_control_alwaysforward", "0", FCVAR_ARCHIVE);
