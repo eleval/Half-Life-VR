@@ -27,7 +27,7 @@ public:
 	void Init();
 
 	void PollEvents();
-	bool UpdatePositions(struct ref_params_s* pparams);
+	bool UpdatePositions();
 	void SubmitImages();
 	void PrepareVRScene(VREye eEye, struct ref_params_s* pparams);
 	void FinishVRScene(struct ref_params_s* pparams);
@@ -48,7 +48,7 @@ private:
 	bool AcceptsDisclaimer();
 	void Exit(const char* lpErrorMessage = nullptr);
 
-	void UpdateGunPosition(struct ref_params_s* pparams);
+	void UpdateGunPosition();
 	void SendPositionUpdateToServer();
 
 	glm::mat4 GetHMDMatrixProjectionEye(VREye eEye);

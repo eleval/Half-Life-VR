@@ -83,7 +83,7 @@ void VRRenderer::CalcRefdef(struct ref_params_s* pparams)
 {
 	if (pparams->nextView == 0)
 	{
-		gVRHelper.UpdatePositions(pparams);
+		gVRHelper.UpdatePositions();
 		gVRHelper.PrepareVRScene(VREye::Left, pparams);
 		gVRHelper.GetViewOrg(pparams->vieworg);
 		gVRHelper.GetViewAngles(pparams->viewangles);

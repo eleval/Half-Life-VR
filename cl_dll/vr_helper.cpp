@@ -281,7 +281,7 @@ void VRHelper::PollEvents()
 	}
 }
 
-bool VRHelper::UpdatePositions(struct ref_params_s* pparams)
+bool VRHelper::UpdatePositions()
 {
 	if (vrSystem != nullptr)
 	{
@@ -305,7 +305,7 @@ bool VRHelper::UpdatePositions(struct ref_params_s* pparams)
 			positions.m_mat4LeftModelView = GetHMDMatrixPoseEye(VREye::Left) * GetModelViewMatrixFromAbsoluteTrackingMatrix(m_mat4HMDPose, -clientGroundPosition);
 			positions.m_mat4RightModelView = GetHMDMatrixPoseEye(VREye::Right) * GetModelViewMatrixFromAbsoluteTrackingMatrix(m_mat4HMDPose, -clientGroundPosition);
 
-			UpdateGunPosition(pparams);
+			UpdateGunPosition();
 
 			SendPositionUpdateToServer();
 
@@ -410,7 +410,7 @@ void VRHelper::GetViewOrg(float * org)
 	}
 }
 
-void VRHelper::UpdateGunPosition(struct ref_params_s* pparams)
+void VRHelper::UpdateGunPosition()
 {
 	cl_entity_t *viewent = gEngfuncs.GetViewModel();
 	if (viewent != nullptr)
