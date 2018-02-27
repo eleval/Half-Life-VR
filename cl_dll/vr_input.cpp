@@ -1,10 +1,9 @@
 
 #include <windows.h>
-#include "Matrices.h"
 #include "hud.h"
-#include "cl_util.h"
-#include "openvr/openvr.h"
 #include "vr_input.h"
+
+#include "cl_util.h"
 
 VRInput g_vrInput;
 

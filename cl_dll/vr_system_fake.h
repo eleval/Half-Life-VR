@@ -3,7 +3,8 @@
 
 #include "vr_system.h"
 
-#include "Matrices.h"
+#include "glm/vec3.hpp"
+#include "glm/mat4x4.hpp"
 
 #include <array>
 #include <queue>
@@ -12,9 +13,9 @@ class VRSystem_Fake final : public IVRSystem
 {
 	struct VRFakeDevice
 	{
-		Vector3 position;
-		Vector3 rotation;
-		Vector3 velocity;
+		glm::vec3 position;
+		glm::vec3 rotation;
+		glm::vec3 velocity;
 	};
 
 	static const int FakeDevicesCount = 3; // Headset and two controllers
@@ -35,9 +36,9 @@ public:
 	void SubmitImage(VREye eye, uint32_t textureHandle) override;
 	void PostPresentHandoff() override;
 	void GetRecommendedRenderTargetSize(uint32_t& outWidth, uint32_t& outHeight) override;
-	Matrix4 GetProjectionMatrix(VREye eye, float nearZ, float farZ) override;
-	Matrix4 GetEyeToHeadTransform(VREye eye) override;
-	Matrix4 GetRawZeroPoseToStandingAbsoluteTrackingPose() override;
+	glm::mat4 GetProjectionMatrix(VREye eye, float nearZ, float farZ) override;
+	glm::mat4 GetEyeToHeadTransform(VREye eye) override;
+	glm::mat4 GetRawZeroPoseToStandingAbsoluteTrackingPose() override;
 	VRTrackedDeviceIndex GetTrackedDeviceIndexForControllerRole(VRTrackedControllerRole role) override;
 	bool PollNextEvent(VREvent& outEvent) override;
 	VRTrackedControllerRole GetControllerRoleForTrackedDeviceIndex(VRTrackedDeviceIndex deviceIndex) override;

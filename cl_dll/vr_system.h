@@ -1,7 +1,7 @@
 #ifndef __VR_SYSTEM_H__
 #define __VR_SYSTEM_H__
 
-#include "Matrices.h"
+#include "glm/matrix.hpp"
 
 #include <vector>
 #include <cstdint>
@@ -36,8 +36,8 @@ inline VRTrackedControllerRole operator++(VRTrackedControllerRole &c)
 
 struct VRTrackedDevicePose
 {
-	Matrix4 transform;
-	Vector velocity;
+	glm::mat4 transform;
+	glm::vec3 velocity;
 	bool isValid;
 };
 
@@ -147,9 +147,9 @@ public:
 	virtual void SubmitImage(VREye eye, uint32_t textureHandle) = 0;
 	virtual void PostPresentHandoff() = 0;
 	virtual void GetRecommendedRenderTargetSize(uint32_t& outWidth, uint32_t& outHeight) = 0;
-	virtual Matrix4 GetProjectionMatrix(VREye eye, float nearZ, float farZ) = 0;
-	virtual Matrix4 GetEyeToHeadTransform(VREye eye) = 0;
-	virtual Matrix4 GetRawZeroPoseToStandingAbsoluteTrackingPose() = 0;
+	virtual glm::mat4 GetProjectionMatrix(VREye eye, float nearZ, float farZ) = 0;
+	virtual glm::mat4 GetEyeToHeadTransform(VREye eye) = 0;
+	virtual glm::mat4 GetRawZeroPoseToStandingAbsoluteTrackingPose() = 0;
 	virtual VRTrackedDeviceIndex GetTrackedDeviceIndexForControllerRole(VRTrackedControllerRole role) = 0;
 	virtual bool PollNextEvent(VREvent& outEvent) = 0;
 	virtual VRTrackedControllerRole GetControllerRoleForTrackedDeviceIndex(VRTrackedDeviceIndex deviceIndex) = 0;

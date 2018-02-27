@@ -2,6 +2,8 @@
 
 #include "vr_system.h"
 
+#include "glm/matrix.hpp"
+
 #include <vector>
 
 class Positions
@@ -9,11 +11,11 @@ class Positions
 public:
 	std::vector<VRTrackedDevicePose> m_rTrackedDevicePose;
 
-	Matrix4 m_mat4LeftProjection;
-	Matrix4 m_mat4RightProjection;
+	glm::mat4 m_mat4LeftProjection;
+	glm::mat4 m_mat4RightProjection;
 
-	Matrix4 m_mat4LeftModelView;
-	Matrix4 m_mat4RightModelView;
+	glm::mat4 m_mat4LeftModelView;
+	glm::mat4 m_mat4RightModelView;
 };
 
 class VRHelper
@@ -35,8 +37,8 @@ public:
 
 	void GetWalkAngles(float * angles);
 
-	Matrix4 GetDeviceTransform(VRTrackedDeviceIndex deviceIndex);
-	Matrix4 GetDeviceAbsoluteTransform(VRTrackedDeviceIndex deviceIndex);
+	glm::mat4 GetDeviceTransform(VRTrackedDeviceIndex deviceIndex);
+	glm::mat4 GetDeviceAbsoluteTransform(VRTrackedDeviceIndex deviceIndex);
 
 	void Recenter();
 
@@ -49,20 +51,20 @@ private:
 	void UpdateGunPosition(struct ref_params_s* pparams);
 	void SendPositionUpdateToServer();
 
-	Matrix4 GetHMDMatrixProjectionEye(VREye eEye);
-	Matrix4 GetHMDMatrixPoseEye(VREye eEye);
+	glm::mat4 GetHMDMatrixProjectionEye(VREye eEye);
+	glm::mat4 GetHMDMatrixPoseEye(VREye eEye);
 
-	Matrix4 GetModelViewMatrixFromAbsoluteTrackingMatrix( Matrix4 &absoluteTrackingMatrix, Vector translate );
+	glm::mat4 GetModelViewMatrixFromAbsoluteTrackingMatrix(glm::mat4 &absoluteTrackingMatrix, Vector translate);
 
-	Vector GetHLViewAnglesFromVRMatrix(const Matrix4 &mat);
-	Vector GetHLAnglesFromVRMatrix(const Matrix4 &mat);
+	Vector GetHLViewAnglesFromVRMatrix(const glm::mat4 &mat);
+	Vector GetHLAnglesFromVRMatrix(const glm::mat4 &mat);
 
 	Positions positions;
 
 	Vector walkAngles;
 
-	Matrix4 centerTransform;
-	Matrix4 invertCenterTransform;
+	glm::mat4 centerTransform;
+	glm::mat4 invertCenterTransform;
 
 	bool isVRRoomScale = true;
 

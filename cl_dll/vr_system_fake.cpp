@@ -1,11 +1,9 @@
-#include "Matrices.h"
 #include "hud.h"
-#include "cl_util.h"
-#include "r_studioint.h"
-#include "ref_params.h"
-#include "kbutton.h"
 
 #include "vr_system_fake.h"
+
+#include "glm/gtc/quaternion.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 
 #include <cassert>
 #include <algorithm>
@@ -18,8 +16,6 @@
 #undef min
 #undef max
 
-extern float CL_KeyState(kbutton_t *key);
-extern kbutton_t in_forward;
 extern int mouseactive;
 
 VRSystem_Fake::VRSystem_Fake() :
@@ -32,9 +28,9 @@ VRSystem_Fake::VRSystem_Fake() :
 
 bool VRSystem_Fake::Init()
 {
-	fakeDevices[FakeHeadsetIdx].position += Vector3(0.0f, 1.5f, 0.0f);
-	fakeDevices[FakeLeftHandControllerIdx].position += Vector3(-0.5f, 1.0f, -0.5f);
-	fakeDevices[FakeRightHandControllerIdx].position += Vector3(0.5f, 1.0f, -0.5f);
+	fakeDevices[FakeHeadsetIdx].position += glm::vec3(0.0f, 1.5f, 0.0f);
+	fakeDevices[FakeLeftHandControllerIdx].position += glm::vec3(-0.5f, 1.0f, -0.5f);
+	fakeDevices[FakeRightHandControllerIdx].position += glm::vec3(0.5f, 1.0f, -0.5f);
 
 	gEngfuncs.pfnSetMousePos(gEngfuncs.GetWindowCenterX(), gEngfuncs.GetWindowCenterY());
 	prevTime = gEngfuncs.GetClientTime();
@@ -71,9 +67,9 @@ void VRSystem_Fake::Update()
 	// Prevent x rotation from going too far up or down
 	fakeDevice.rotation.x = std::min(std::max(-M_PI * 0.5f + 0.1f, fakeDevice.rotation.x), M_PI * 0.5f - 0.1f);
 
-	Vector3 forward(-sinf(fakeDevice.rotation.y), 0.0f, -cosf(fakeDevice.rotation.y));
-	Vector3 right(-sinf(fakeDevice.rotation.y - M_PI * 0.5f), 0.0f, -cosf(fakeDevice.rotation.y - M_PI * 0.5f));
-	Vector3 up(0.0f, 1.0f, 0.0f);
+	glm::vec3 forward(-sinf(fakeDevice.rotation.y), 0.0f, -cosf(fakeDevice.rotation.y));
+	glm::vec3 right(-sinf(fakeDevice.rotation.y - M_PI * 0.5f), 0.0f, -cosf(fakeDevice.rotation.y - M_PI * 0.5f));
+	glm::vec3 up(0.0f, 1.0f, 0.0f);
 
 	gEngfuncs.pfnSetMousePos(gEngfuncs.GetWindowCenterX(), gEngfuncs.GetWindowCenterY());
 
@@ -124,9 +120,9 @@ void VRSystem_Fake::Update()
 	// Axis1 = 33, // Mouse 1
 	// Others aren't set as they are not present on the Vive. Feel free to implement them if you wish
 	VRControllerState& controllerState = fakeControllers[controlledDeviceIdx];
-	SetControllerButtonState(controllerState, VRButton::System, keyboardState[VK_F1] >> 4);
-	SetControllerButtonState(controllerState, VRButton::ApplicationMenu, keyboardState[VK_F2] >> 4);
-	SetControllerButtonState(controllerState, VRButton::Grip, keyboardState[VK_RBUTTON] >> 4);
+	SetControllerButtonState(controllerState, VRButton::System, (keyboardState[VK_F1] >> 4) != 0);
+	SetControllerButtonState(controllerState, VRButton::ApplicationMenu, (keyboardState[VK_F2] >> 4) != 0);
+	SetControllerButtonState(controllerState, VRButton::Grip, (keyboardState[VK_RBUTTON] >> 4) != 0);
 
 	const uint64_t axis0 = 0;
 	const uint64_t axis1 = 1;
@@ -200,13 +196,14 @@ void VRSystem_Fake::WaitGetPoses(std::vector<VRTrackedDevicePose>& trackedPoses)
 		VRFakeDevice& fakeDevice = fakeDevices[i];
 
 		trackedPose.isValid = true;
-		trackedPose.transform.identity();
-		
-		trackedPose.transform.rotateX(fakeDevice.rotation.x);
-		trackedPose.transform.rotateY(fakeDevice.rotation.y);
-		trackedPose.transform.rotateZ(fakeDevice.rotation.z);
+		trackedPose.transform = glm::mat4(1.0f);
 
-		trackedPose.transform.translate(fakeDevice.position);
+		const glm::mat4 translation = glm::translate(glm::mat4(1.0f), fakeDevice.position);
+
+		const glm::quat quat(fakeDevice.rotation);
+		const glm::mat4 rotation = glm::mat4_cast(quat);
+
+		trackedPose.transform = translation * rotation;
 		
 		trackedPose.velocity.x = fakeDevice.velocity.x;
 		trackedPose.velocity.y = fakeDevice.velocity.y;
@@ -236,24 +233,24 @@ void VRSystem_Fake::GetRecommendedRenderTargetSize(uint32_t& outWidth, uint32_t&
 	outHeight = 1080;
 }
 
-Matrix4 VRSystem_Fake::GetProjectionMatrix(VREye eye, float nearZ, float farZ)
+glm::mat4 VRSystem_Fake::GetProjectionMatrix(VREye eye, float nearZ, float farZ)
 {
 	// Since we have nothing to render, we don't care about that, we will just return an identity matrix
-	Matrix4 identity;
+	glm::mat4 identity(1.0f);
 	return identity;
 }
 
-Matrix4 VRSystem_Fake::GetEyeToHeadTransform(VREye eye)
+glm::mat4 VRSystem_Fake::GetEyeToHeadTransform(VREye eye)
 {
 	// Since the eye is at the same place as the headset in fake VR, return an indentity Matrix
-	Matrix4 identity;
+	glm::mat4 identity(1.0f);
 	return identity;
 }
 
-Matrix4 VRSystem_Fake::GetRawZeroPoseToStandingAbsoluteTrackingPose()
+glm::mat4 VRSystem_Fake::GetRawZeroPoseToStandingAbsoluteTrackingPose()
 {
 	// TODO but isn't used
-	Matrix4 identity;
+	glm::mat4 identity(1.0f);
 	return identity;
 }
 

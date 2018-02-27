@@ -1,4 +1,5 @@
-#pragma once
+#ifndef __VR_RENDERER_H__
+#define __VR_RENDERER_H__
 
 class VRRenderer
 {
@@ -33,3 +34,5 @@ private:
 };
 
 extern VRRenderer gVRRenderer;
+
+#endif

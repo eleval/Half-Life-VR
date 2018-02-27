@@ -1,8 +1,4 @@
-
-#include "Matrices.h"
-
 #include "hud.h"
-#include "cl_util.h"
 #include "cvardef.h"
 #include "usercmd.h"
 #include "const.h"
@@ -29,6 +25,8 @@
 
 #include <windows.h>
 #include "vr_gl.h"
+
+#include "cl_util.h"
 
 
 extern globalvars_t *gpGlobals;

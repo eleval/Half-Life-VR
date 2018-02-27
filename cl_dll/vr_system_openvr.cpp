@@ -1,10 +1,8 @@
-#include "Matrices.h"
 #include "hud.h"
-#include "cl_util.h"
-#include "r_studioint.h"
-#include "ref_params.h"
 
 #include "vr_system_openvr.h"
+
+#include "glm/vec3.hpp"
 
 #include <cassert>
 
@@ -36,9 +34,9 @@ static vr::EVREventType openVREventType[] = {
 	vr::VREvent_ButtonUnpress, // VREventType::ButtonUnpress
 };
 
-Matrix4 ConvertSteamVRMatrixToMatrix4(const vr::HmdMatrix34_t &mat)
+glm::mat4 ConvertSteamVRMatrixToMatrix4(const vr::HmdMatrix34_t &mat)
 {
-	return Matrix4(
+	return glm::mat4(
 		mat.m[0][0], mat.m[1][0], mat.m[2][0], 0.0f,
 		mat.m[0][1], mat.m[1][1], mat.m[2][1], 0.0f,
 		mat.m[0][2], mat.m[1][2], mat.m[2][2], 0.0f,
@@ -46,9 +44,9 @@ Matrix4 ConvertSteamVRMatrixToMatrix4(const vr::HmdMatrix34_t &mat)
 	);
 }
 
-Matrix4 ConvertSteamVRMatrixToMatrix4(const vr::HmdMatrix44_t &mat)
+glm::mat4 ConvertSteamVRMatrixToMatrix4(const vr::HmdMatrix44_t &mat)
 {
-	return Matrix4(
+	return glm::mat4(
 		mat.m[0][0], mat.m[1][0], mat.m[2][0], mat.m[3][0],
 		mat.m[0][1], mat.m[1][1], mat.m[2][1], mat.m[3][1],
 		mat.m[0][2], mat.m[1][2], mat.m[2][2], mat.m[3][2],
@@ -157,7 +155,7 @@ void VRSystem_OpenVR::WaitGetPoses(std::vector<VRTrackedDevicePose>& trackedPose
 
 		trackedDevicePose.isValid = openVRTrackedDevicePose.bDeviceIsConnected && openVRTrackedDevicePose.bPoseIsValid && openVRTrackedDevicePose.eTrackingResult == vr::TrackingResult_Running_OK;
 		trackedDevicePose.transform = ConvertSteamVRMatrixToMatrix4(openVRTrackedDevicePose.mDeviceToAbsoluteTracking);
-		trackedDevicePose.velocity = Vector(openVRTrackedDevicePose.vVelocity.v);
+		trackedDevicePose.velocity = glm::vec3(openVRTrackedDevicePose.vVelocity.v[0], openVRTrackedDevicePose.vVelocity.v[1], openVRTrackedDevicePose.vVelocity.v[2]);
 	}
 }
 
@@ -186,17 +184,17 @@ void VRSystem_OpenVR::GetRecommendedRenderTargetSize(uint32_t& outWidth, uint32_
 	vrSystem->GetRecommendedRenderTargetSize(&outWidth, &outHeight);
 }
 
-Matrix4 VRSystem_OpenVR::GetProjectionMatrix(VREye eye, float nearZ, float farZ)
+glm::mat4 VRSystem_OpenVR::GetProjectionMatrix(VREye eye, float nearZ, float farZ)
 {
 	return ConvertSteamVRMatrixToMatrix4(vrSystem->GetProjectionMatrix(openVREye[static_cast<int>(eye)], nearZ, farZ));
 }
 
-Matrix4 VRSystem_OpenVR::GetEyeToHeadTransform(VREye eye)
+glm::mat4 VRSystem_OpenVR::GetEyeToHeadTransform(VREye eye)
 {
 	return ConvertSteamVRMatrixToMatrix4(vrSystem->GetEyeToHeadTransform(openVREye[static_cast<int>(eye)]));
 }
 
-Matrix4 VRSystem_OpenVR::GetRawZeroPoseToStandingAbsoluteTrackingPose()
+glm::mat4 VRSystem_OpenVR::GetRawZeroPoseToStandingAbsoluteTrackingPose()
 {
 	return ConvertSteamVRMatrixToMatrix4(vrSystem->GetRawZeroPoseToStandingAbsoluteTrackingPose());
 }

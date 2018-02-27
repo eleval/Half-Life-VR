@@ -1,8 +1,6 @@
 
 #include <windows.h>
-#include "Matrices.h"
 #include "hud.h"
-#include "cl_util.h"
 #include "r_studioint.h"
 #include "ref_params.h"
 #include "vr_helper.h"
@@ -11,14 +9,25 @@
 #include "vr_system_openvr.h"
 #include "vr_system_fake.h"
 
+#include "glm/matrix.hpp"
+#include "glm/vec3.hpp"
+#include "glm/vec4.hpp"
+
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
+#define GLM_ENABLE_EXPERIMENTAL
+#include "glm/gtx/matrix_decompose.hpp"
+
+#include "cl_util.h"
+
 #ifndef MAX_COMMAND_SIZE
 #define MAX_COMMAND_SIZE 256
 #endif
 
 extern engine_studio_api_t IEngineStudio;
 
-const Vector3 HL_TO_VR(2.3f / 10.f, 2.2f / 10.f, 2.3f / 10.f);
-const Vector3 VR_TO_HL(1.f / HL_TO_VR.x, 1.f / HL_TO_VR.y, 1.f / HL_TO_VR.z);
+const glm::vec3 HL_TO_VR(2.3f / 10.f, 2.2f / 10.f, 2.3f / 10.f);
+const glm::vec3 VR_TO_HL(1.f / HL_TO_VR.x, 1.f / HL_TO_VR.y, 1.f / HL_TO_VR.z);
 const float FLOOR_OFFSET = 10;
 
 VRHelper gVRHelper;
@@ -34,9 +43,9 @@ void VR_Recenter()
 	gVRHelper.Recenter();
 }
 
-VRHelper::VRHelper()
+VRHelper::VRHelper() :
+	invertCenterTransform(1.0f)
 {
-
 }
 
 VRHelper::~VRHelper()
@@ -137,39 +146,41 @@ void VRHelper::Exit(const char* lpErrorMessage)
 	std::exit(lpErrorMessage != nullptr ? 1 : 0);
 }
 
-Matrix4 VRHelper::GetHMDMatrixProjectionEye(VREye eEye)
+glm::mat4 VRHelper::GetHMDMatrixProjectionEye(VREye eEye)
 {
 	float fNearZ = 0.01f;
 	float fFarZ = 8192.f;
 	return vrSystem->GetProjectionMatrix(eEye, fNearZ, fFarZ);
 }
 
-Matrix4 VRHelper::GetHMDMatrixPoseEye(VREye nEye)
+glm::mat4 VRHelper::GetHMDMatrixPoseEye(VREye nEye)
 {
-	return vrSystem->GetEyeToHeadTransform(nEye).invert();
+	return glm::inverse(vrSystem->GetEyeToHeadTransform(nEye));
 }
 
 extern void VectorAngles(const float *forward, float *angles);
 
-Vector VRHelper::GetHLViewAnglesFromVRMatrix(const Matrix4 &mat)
+Vector VRHelper::GetHLViewAnglesFromVRMatrix(const glm::mat4 &mat)
 {
-	Vector4 v1 = mat * Vector4(1, 0, 0, 0);
-	Vector4 v2 = mat * Vector4(0, 1, 0, 0);
-	Vector4 v3 = mat * Vector4(0, 0, 1, 0);
-	v1.normalize();
-	v2.normalize();
-	v3.normalize();
+	glm::vec4 v1 = mat * glm::vec4(1, 0, 0, 0);
+	glm::vec4 v2 = mat * glm::vec4(0, 1, 0, 0);
+	glm::vec4 v3 = mat * glm::vec4(0, 0, 1, 0);
+
+	v1 = glm::normalize(v1);
+	v2 = glm::normalize(v2);
+	v3 = glm::normalize(v3);
+
 	Vector angles;
 	VectorAngles(Vector(-v1.z, -v2.z, -v3.z), angles);
 	angles.x = 360.f - angles.x;	// viewangles pitch is inverted
 	return angles;
 }
 
-Vector VRHelper::GetHLAnglesFromVRMatrix(const Matrix4 &mat)
+Vector VRHelper::GetHLAnglesFromVRMatrix(const glm::mat4 &mat)
 {
-	Vector4 forwardInVRSpace = mat * Vector4(0, 0, -1, 0);
-	Vector4 rightInVRSpace = mat * Vector4(1, 0, 0, 0);
-	Vector4 upInVRSpace = mat * Vector4(0, 1, 0, 0);
+	glm::vec4 forwardInVRSpace = mat * glm::vec4(0, 0, -1, 0);
+	glm::vec4 rightInVRSpace = mat * glm::vec4(1, 0, 0, 0);
+	glm::vec4 upInVRSpace = mat * glm::vec4(0, 1, 0, 0);
 
 	Vector forward(forwardInVRSpace.x, -forwardInVRSpace.z, forwardInVRSpace.y);
 	Vector right(rightInVRSpace.x, -rightInVRSpace.z, rightInVRSpace.y);
@@ -185,36 +196,36 @@ Vector VRHelper::GetHLAnglesFromVRMatrix(const Matrix4 &mat)
 	return angles;
 }
 
-Matrix4 VRHelper::GetModelViewMatrixFromAbsoluteTrackingMatrix(Matrix4 &absoluteTrackingMatrix, Vector translate)
+glm::mat4 VRHelper::GetModelViewMatrixFromAbsoluteTrackingMatrix(glm::mat4 &absoluteTrackingMatrix, Vector translate)
 {
-	Matrix4 hlToVRScaleMatrix;
-	hlToVRScaleMatrix[0] = HL_TO_VR.x;
-	hlToVRScaleMatrix[5] = HL_TO_VR.y;
-	hlToVRScaleMatrix[10] = HL_TO_VR.z;
+	glm::mat4 hlToVRScaleMatrix(1.0f);
+	hlToVRScaleMatrix[0][0] = HL_TO_VR.x * 10.0f;
+	hlToVRScaleMatrix[1][1] = HL_TO_VR.y * 10.0f;
+	hlToVRScaleMatrix[2][2] = HL_TO_VR.z * 10.0f;
 
-	Matrix4 hlToVRTranslateMatrix;
-	hlToVRTranslateMatrix[12] = translate.x;
-	hlToVRTranslateMatrix[13] = translate.y;
-	hlToVRTranslateMatrix[14] = translate.z;
+	glm::mat4 hlToVRTranslateMatrix(1.0f);
+	hlToVRTranslateMatrix[3][0] = translate.x;
+	hlToVRTranslateMatrix[3][1] = translate.y;
+	hlToVRTranslateMatrix[3][2] = translate.z;
 
-	Matrix4 switchYAndZTransitionMatrix;
-	switchYAndZTransitionMatrix[5] = 0;
-	switchYAndZTransitionMatrix[6] = -1;
-	switchYAndZTransitionMatrix[9] = 1;
-	switchYAndZTransitionMatrix[10] = 0;
+	glm::mat4 switchYAndZTransitionMatrix(1.0f);
+	switchYAndZTransitionMatrix[1][1] = 0;
+	switchYAndZTransitionMatrix[1][2] = -1;
+	switchYAndZTransitionMatrix[2][1] = 1;
+	switchYAndZTransitionMatrix[2][2] = 0;
 
-	Matrix4 modelViewMatrix = absoluteTrackingMatrix * hlToVRScaleMatrix *switchYAndZTransitionMatrix * hlToVRTranslateMatrix;
-	modelViewMatrix.scale(13);
+	glm::mat4 modelViewMatrix = absoluteTrackingMatrix * hlToVRScaleMatrix *switchYAndZTransitionMatrix * hlToVRTranslateMatrix;
+	//modelViewMatrix = glm::scale(modelViewMatrix, glm::vec3(13.0f, 13.0f, 13.0f));
 	return modelViewMatrix;
 }
 
-Vector GetOffsetInHLSpaceFromAbsoluteTrackingMatrix(const Matrix4 & absoluteTrackingMatrix)
+Vector GetOffsetInHLSpaceFromAbsoluteTrackingMatrix(const glm::mat4 & absoluteTrackingMatrix)
 {
-	Vector4 originInVRSpace = absoluteTrackingMatrix * Vector4(0, 0, .10, 1);
+	glm::vec4 originInVRSpace = absoluteTrackingMatrix * glm::vec4(0, 0, .10, 1);
 	return Vector(originInVRSpace.x * VR_TO_HL.x * 10, -originInVRSpace.z * VR_TO_HL.z * 10, originInVRSpace.y * VR_TO_HL.y * 10);
 }
 
-Vector GetPositionInHLSpaceFromAbsoluteTrackingMatrix(const Matrix4 & absoluteTrackingMatrix)
+Vector GetPositionInHLSpaceFromAbsoluteTrackingMatrix(const glm::mat4 & absoluteTrackingMatrix)
 {
 	Vector originInRelativeHLSpace = GetOffsetInHLSpaceFromAbsoluteTrackingMatrix(absoluteTrackingMatrix);
 
@@ -283,8 +294,7 @@ bool VRHelper::UpdatePositions(struct ref_params_s* pparams)
 			//Matrix4 m_mat4SeatedPose = ConvertSteamVRMatrixToMatrix4(vrSystem->GetSeatedZeroPoseToStandingAbsoluteTrackingPose()).invert();
 			//Matrix4 m_mat4StandingPose = vrInterface->GetRawZeroPoseToStandingAbsoluteTrackingPose().invert();
 
-			Matrix4 m_mat4HMDPose = GetDeviceTransform(VRTrackedDeviceIndex_Hmd);
-			m_mat4HMDPose.invert();
+			glm::mat4 m_mat4HMDPose = glm::inverse(GetDeviceTransform(VRTrackedDeviceIndex_Hmd));
 
 			positions.m_mat4LeftProjection = GetHMDMatrixProjectionEye(VREye::Left);
 			positions.m_mat4RightProjection = GetHMDMatrixProjectionEye(VREye::Right);
@@ -320,12 +330,12 @@ void VRHelper::PrepareVRScene(VREye eEye, struct ref_params_s* pparams)
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
-	glLoadMatrixf(eEye == VREye::Left ? positions.m_mat4LeftProjection.get() : positions.m_mat4RightProjection.get());
+	glLoadMatrixf(eEye == VREye::Left ? glm::value_ptr((positions.m_mat4LeftProjection)) : glm::value_ptr((positions.m_mat4RightProjection)));
 
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	glLoadIdentity();
-	glLoadMatrixf(eEye == VREye::Left ? positions.m_mat4LeftModelView.get() : positions.m_mat4RightModelView.get());
+	glLoadMatrixf(eEye == VREye::Left ? glm::value_ptr((positions.m_mat4LeftModelView)) : glm::value_ptr((positions.m_mat4RightModelView)));
 
 	glDisable(GL_CULL_FACE);
 	glCullFace(GL_NONE);
@@ -367,25 +377,36 @@ void VRHelper::GetWalkAngles(float * angles)
 
 void VRHelper::GetViewOrg(float * org)
 {
-	if ( vr_renderEyeInWindow->value == 0.0f)
+	if (vr_renderEyeInWindow->value == 0.0f)
 	{
-		GetPositionInHLSpaceFromAbsoluteTrackingMatrix( GetDeviceTransform( VRTrackedDeviceIndex_Hmd ) ).CopyToArray( org );
+		Vector trans = GetPositionInHLSpaceFromAbsoluteTrackingMatrix(GetDeviceTransform(VRTrackedDeviceIndex_Hmd));
+		trans.CopyToArray(org);
 	}
 	else if ( vr_renderEyeInWindow->value == 1.0f)
 	{
-		Matrix4 a = positions.m_mat4LeftModelView;
-		a.invert();
-		Vector3 trans = a.getTranslation();
-		Vector trans2( trans.x, trans.y, trans.z );
-		trans2.CopyToArray( org );
+		glm::mat4 a = positions.m_mat4LeftModelView;
+		a = glm::inverse(a);
+		glm::vec3 scale;
+		glm::quat rot;
+		glm::vec3 trans;
+		glm::vec3 skew;
+		glm::vec4 perspective;
+		glm::decompose(a, scale, rot, trans, skew, perspective);
+		Vector trans2(trans.x, trans.y, trans.z);
+		trans2.CopyToArray(org);
 	}
 	else
 	{
-		Matrix4 a = positions.m_mat4RightModelView;
-		a.invert();
-		Vector3 trans = a.getTranslation();
-		Vector trans2( trans.x, trans.y, trans.z );
-		trans2.CopyToArray( org );
+		glm::mat4 a = positions.m_mat4RightModelView;
+		a = glm::inverse(a);
+		glm::vec3 scale;
+		glm::quat rot;
+		glm::vec3 trans;
+		glm::vec3 skew;
+		glm::vec4 perspective;
+		glm::decompose(a, scale, rot, trans, skew, perspective);
+		Vector trans2(trans.x, trans.y, trans.z);
+		trans2.CopyToArray(org);
 	}
 }
 
@@ -398,9 +419,9 @@ void VRHelper::UpdateGunPosition(struct ref_params_s* pparams)
 
 		if (controllerIndex > 0 && controllerIndex != VRTrackedDeviceIndexInvalid && positions.m_rTrackedDevicePose[controllerIndex].isValid)
 		{
-			Matrix4 controllerAbsoluteTrackingMatrix = GetDeviceTransform(controllerIndex);
+			glm::mat4 controllerAbsoluteTrackingMatrix = GetDeviceTransform(controllerIndex);
 
-			Vector4 originInVRSpace = controllerAbsoluteTrackingMatrix * Vector4(0, 0, 0, 1);
+			glm::vec4 originInVRSpace = controllerAbsoluteTrackingMatrix * glm::vec4(0, 0, 0, 1);
 			Vector originInRelativeHLSpace(originInVRSpace.x * VR_TO_HL.x * 10, -originInVRSpace.z * VR_TO_HL.z * 10, originInVRSpace.y * VR_TO_HL.y * 10);
 
 			cl_entity_t *localPlayer = gEngfuncs.GetLocalPlayer();
@@ -417,7 +438,7 @@ void VRHelper::UpdateGunPosition(struct ref_params_s* pparams)
 			VectorCopy(viewent->angles, viewent->latched.prevangles);
 
 
-			Vector velocityInVRSpace = positions.m_rTrackedDevicePose[controllerIndex].velocity;
+			Vector velocityInVRSpace = Vector(positions.m_rTrackedDevicePose[controllerIndex].velocity.x, positions.m_rTrackedDevicePose[controllerIndex].velocity.y, positions.m_rTrackedDevicePose[controllerIndex].velocity.z);
 			Vector velocityInHLSpace(velocityInVRSpace.x * VR_TO_HL.x * 10, -velocityInVRSpace.z * VR_TO_HL.z * 10, velocityInVRSpace.y * VR_TO_HL.y * 10);
 			viewent->curstate.velocity = velocityInHLSpace;
 		}
@@ -446,7 +467,7 @@ void VRHelper::SendPositionUpdateToServer()
 	Vector leftControllerAngles(0, 0, 0);
 	if (isLeftControllerValid)
 	{
-		Matrix4 leftControllerAbsoluteTrackingMatrix = GetDeviceTransform(leftControllerIndex);
+		glm::mat4 leftControllerAbsoluteTrackingMatrix = GetDeviceTransform(leftControllerIndex);
 		leftControllerOffset = GetOffsetInHLSpaceFromAbsoluteTrackingMatrix(leftControllerAbsoluteTrackingMatrix);
 		leftControllerOffset.z += localPlayer->curstate.mins.z;
 		leftControllerAngles = GetHLAnglesFromVRMatrix(leftControllerAbsoluteTrackingMatrix);
@@ -484,28 +505,31 @@ void VRHelper::SendPositionUpdateToServer()
 	gEngfuncs.pfnClientCmd(cmd);
 }
 
-Matrix4 VRHelper::GetDeviceTransform(VRTrackedDeviceIndex deviceIndex)
+glm::mat4 VRHelper::GetDeviceTransform(VRTrackedDeviceIndex deviceIndex)
 {
 	return invertCenterTransform * positions.m_rTrackedDevicePose[deviceIndex].transform;
 }
 
-Matrix4 VRHelper::GetDeviceAbsoluteTransform(VRTrackedDeviceIndex deviceIndex)
+glm::mat4 VRHelper::GetDeviceAbsoluteTransform(VRTrackedDeviceIndex deviceIndex)
 {
 	return positions.m_rTrackedDevicePose[deviceIndex].transform;
 }
 
 void VRHelper::Recenter()
 {
-	Matrix4 hmdTransform = GetDeviceAbsoluteTransform(VRTrackedDeviceIndex_Hmd);
-	centerTransform.identity();
-	Vector3 centerTranslation;
-	centerTranslation = hmdTransform.getTranslation();
+	glm::mat4 hmdTransform = GetDeviceAbsoluteTransform(VRTrackedDeviceIndex_Hmd);
+	centerTransform = glm::mat4(1.0f);
+	glm::vec3 centerTranslation;
+	glm::vec3 scale;
+	glm::quat rot;
+	glm::vec3 skew;
+	glm::vec4 perspective;
+	glm::decompose(hmdTransform, scale, rot, centerTranslation, skew, perspective);
 
 	cl_entity_t *localPlayer = gEngfuncs.GetLocalPlayer();
 	centerTranslation.y += (localPlayer->curstate.mins.z * HL_TO_VR.z * 0.1f);
-	centerTransform.translate(centerTranslation);
-	invertCenterTransform = centerTransform;
-	invertCenterTransform.invert();
+	centerTransform = glm::translate(centerTransform, centerTranslation);
+	invertCenterTransform = glm::inverse(centerTransform);
 }
 
 void RenderLine(Vector v1, Vector v2, Vector color)
@@ -525,13 +549,13 @@ void VRHelper::TestRenderControllerPosition(bool leftOrRight)
 
 	if (controllerIndex > 0 && controllerIndex != VRTrackedDeviceIndexInvalid && positions.m_rTrackedDevicePose[controllerIndex].isValid)
 	{
-		Matrix4 controllerAbsoluteTrackingMatrix = GetDeviceTransform(controllerIndex);
+		glm::mat4 controllerAbsoluteTrackingMatrix = GetDeviceTransform(controllerIndex);
 
 		Vector originInHLSpace = GetPositionInHLSpaceFromAbsoluteTrackingMatrix(controllerAbsoluteTrackingMatrix);
 		
-		Vector4 forwardInVRSpace = controllerAbsoluteTrackingMatrix * Vector4(0, 0, -1, 0);
-		Vector4 rightInVRSpace = controllerAbsoluteTrackingMatrix * Vector4(-1, 0, 0, 0);
-		Vector4 upInVRSpace = controllerAbsoluteTrackingMatrix * Vector4(0, 1, 0, 0);
+		glm::vec4 forwardInVRSpace = controllerAbsoluteTrackingMatrix * glm::vec4(0, 0, -1, 0);
+		glm::vec4 rightInVRSpace = controllerAbsoluteTrackingMatrix * glm::vec4(-1, 0, 0, 0);
+		glm::vec4 upInVRSpace = controllerAbsoluteTrackingMatrix * glm::vec4(0, 1, 0, 0);
 
 		Vector forward(forwardInVRSpace.x * VR_TO_HL.x * 3, -forwardInVRSpace.z * VR_TO_HL.z * 3, forwardInVRSpace.y * VR_TO_HL.y * 3);
 		Vector right(rightInVRSpace.x * VR_TO_HL.x * 3, -rightInVRSpace.z * VR_TO_HL.z * 3, rightInVRSpace.y * VR_TO_HL.y * 3);

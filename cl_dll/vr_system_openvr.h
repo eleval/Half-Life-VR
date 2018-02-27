@@ -20,9 +20,9 @@ public:
 	void SubmitImage(VREye eye, uint32_t textureHandle) override;
 	void PostPresentHandoff() override;
 	void GetRecommendedRenderTargetSize(uint32_t& outWidth, uint32_t& outHeight) override;
-	Matrix4 GetProjectionMatrix(VREye eye, float nearZ, float farZ) override;
-	Matrix4 GetEyeToHeadTransform(VREye eye) override;
-	Matrix4 GetRawZeroPoseToStandingAbsoluteTrackingPose() override;
+	glm::mat4 GetProjectionMatrix(VREye eye, float nearZ, float farZ) override;
+	glm::mat4 GetEyeToHeadTransform(VREye eye) override;
+	glm::mat4 GetRawZeroPoseToStandingAbsoluteTrackingPose() override;
 	VRTrackedDeviceIndex GetTrackedDeviceIndexForControllerRole(VRTrackedControllerRole role) override;
 	bool PollNextEvent(VREvent& outEvent) override;
 	VRTrackedControllerRole GetControllerRoleForTrackedDeviceIndex(VRTrackedDeviceIndex deviceIndex) override;
