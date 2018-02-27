@@ -27,6 +27,7 @@ cvar_t *vr_weapontilt;
 cvar_t *vr_roomcrouch;
 cvar_t* vr_systemType;
 cvar_t* vr_showPlayer;
+cvar_t* vr_renderEyeInWindow;
 
 void VR_Recenter()
 {
@@ -52,6 +53,7 @@ void VRHelper::Init()
 	vr_roomcrouch = gEngfuncs.pfnRegisterVariable("vr_roomcrouch", "1", FCVAR_ARCHIVE);
 	vr_systemType = gEngfuncs.pfnRegisterVariable("vr_systemType", "1", FCVAR_ARCHIVE);
 	vr_showPlayer = gEngfuncs.pfnRegisterVariable("vr_showPlayer", "0", 0);
+	vr_renderEyeInWindow = gEngfuncs.pfnRegisterVariable("vr_renderEyeInWindow", "0", 0); // 0 = Classic preview - 1 = Left eye - 2 = Right eye
 
 	//Register Input convars 
 	g_vrInput.vr_control_alwaysforward = gEngfuncs.pfnRegisterVariable("vr_control_alwaysforward", "0", FCVAR_ARCHIVE);
@@ -183,7 +185,7 @@ Vector VRHelper::GetHLAnglesFromVRMatrix(const Matrix4 &mat)
 	return angles;
 }
 
-Matrix4 GetModelViewMatrixFromAbsoluteTrackingMatrix(Matrix4 &absoluteTrackingMatrix, Vector translate)
+Matrix4 VRHelper::GetModelViewMatrixFromAbsoluteTrackingMatrix(Matrix4 &absoluteTrackingMatrix, Vector translate)
 {
 	Matrix4 hlToVRScaleMatrix;
 	hlToVRScaleMatrix[0] = HL_TO_VR.x;
@@ -365,7 +367,26 @@ void VRHelper::GetWalkAngles(float * angles)
 
 void VRHelper::GetViewOrg(float * org)
 {
-	GetPositionInHLSpaceFromAbsoluteTrackingMatrix(GetDeviceTransform(VRTrackedDeviceIndex_Hmd)).CopyToArray(org);
+	if ( vr_renderEyeInWindow->value == 0.0f)
+	{
+		GetPositionInHLSpaceFromAbsoluteTrackingMatrix( GetDeviceTransform( VRTrackedDeviceIndex_Hmd ) ).CopyToArray( org );
+	}
+	else if ( vr_renderEyeInWindow->value == 1.0f)
+	{
+		Matrix4 a = positions.m_mat4LeftModelView;
+		a.invert();
+		Vector3 trans = a.getTranslation();
+		Vector trans2( trans.x, trans.y, trans.z );
+		trans2.CopyToArray( org );
+	}
+	else
+	{
+		Matrix4 a = positions.m_mat4RightModelView;
+		a.invert();
+		Vector3 trans = a.getTranslation();
+		Vector trans2( trans.x, trans.y, trans.z );
+		trans2.CopyToArray( org );
+	}
 }
 
 void VRHelper::UpdateGunPosition(struct ref_params_s* pparams)
@@ -481,7 +502,7 @@ void VRHelper::Recenter()
 	centerTranslation = hmdTransform.getTranslation();
 
 	cl_entity_t *localPlayer = gEngfuncs.GetLocalPlayer();
-	centerTranslation.y += (localPlayer->curstate.mins.z * HL_TO_VR.z * 0.1f); // Ignore height difference
+	centerTranslation.y += (localPlayer->curstate.mins.z * HL_TO_VR.z * 0.1f);
 	centerTransform.translate(centerTranslation);
 	invertCenterTransform = centerTransform;
 	invertCenterTransform.invert();

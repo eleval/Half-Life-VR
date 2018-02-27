@@ -52,6 +52,8 @@ private:
 	Matrix4 GetHMDMatrixProjectionEye(VREye eEye);
 	Matrix4 GetHMDMatrixPoseEye(VREye eEye);
 
+	Matrix4 GetModelViewMatrixFromAbsoluteTrackingMatrix( Matrix4 &absoluteTrackingMatrix, Vector translate );
+
 	Vector GetHLViewAnglesFromVRMatrix(const Matrix4 &mat);
 	Vector GetHLAnglesFromVRMatrix(const Matrix4 &mat);
 
