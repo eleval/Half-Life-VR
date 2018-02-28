@@ -14,6 +14,8 @@ public:
 	glm::mat4 m_mat4LeftProjection;
 	glm::mat4 m_mat4RightProjection;
 
+	glm::mat4 m_mat4HmdModelView;
+
 	glm::mat4 m_mat4LeftModelView;
 	glm::mat4 m_mat4RightModelView;
 };
@@ -52,8 +54,11 @@ private:
 	void SendPositionUpdateToServer();
 
 	glm::mat4 GetHMDMatrixProjectionEye(VREye eEye);
-	glm::mat4 GetHMDMatrixPoseEye(VREye eEye);
 
+	glm::mat4 TransformVRSpaceToHLSpace(const glm::mat4& vrSpaceMatrix);
+	glm::mat4 TranslateToPlayerView(const glm::mat4 transform);
+	glm::vec3 GetTranslationFromTransform(const glm::mat4& transform);
+	glm::quat GetRotationFromTransform(const glm::mat4& transform);
 	glm::mat4 GetModelViewMatrixFromAbsoluteTrackingMatrix(glm::mat4 &absoluteTrackingMatrix, Vector translate);
 
 	Vector GetHLViewAnglesFromVRMatrix(const glm::mat4 &mat);
