@@ -6,11 +6,33 @@
 #include "glm/vec3.hpp"
 #include "glm/mat4x4.hpp"
 
+#include <windows.h>
+
 #include <array>
 #include <queue>
 
 class VRSystem_Fake final : public IVRSystem
 {
+private:
+	class VREyeRenderWindow
+	{
+	public:
+		VREyeRenderWindow();
+
+		bool Init(VREye eye);
+		void Shutdown();
+
+		void Render(uint32_t textureHandle);
+
+	private:
+		HDC m_hdc;
+		HGLRC m_hrc;
+		HINSTANCE m_hinstance;
+		HWND m_window;
+
+		std::string m_className;
+	};
+
 	struct VRFakeDevice
 	{
 		glm::vec3 position;
@@ -55,6 +77,9 @@ private:
 	std::array<VRControllerState, FakeDevicesCount> fakeControllers;
 
 	std::queue<VREvent> eventQueue;
+
+	VREyeRenderWindow leftEyeRender;
+	VREyeRenderWindow rightEyeRender;
 
 	float prevTime;
 	int controlledDeviceIdx;
