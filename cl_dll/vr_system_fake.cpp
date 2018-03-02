@@ -8,6 +8,7 @@
 #include <cassert>
 #include <algorithm>
 #include <windows.h>
+#include <gl\gl.h>
 
 #ifndef M_PI
 #define M_PI		3.14159265358979323846f
@@ -17,6 +18,200 @@
 #undef max
 
 extern int mouseactive;
+
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	return DefWindowProc(hWnd, message, wParam, lParam);
+}
+
+VRSystem_Fake::VREyeRenderWindow::VREyeRenderWindow() :
+	m_hdc(NULL),
+	m_hrc(NULL),
+	m_hinstance(NULL),
+	m_window(NULL)
+{
+
+}
+
+bool VRSystem_Fake::VREyeRenderWindow::Init(VREye eye)
+{
+	GLuint pixelFormat;
+	WNDCLASS wc;
+	DWORD exStyle;
+	DWORD style;
+	RECT windowRect;
+
+	m_className = eye == VREye::Left ? "VRFake_Left" : "VRFake_Right",
+
+	windowRect.left = (long)0;
+	windowRect.right = (long)800;
+	windowRect.top = (long)0;
+	windowRect.bottom = (long)600;
+
+	m_hinstance = GetModuleHandle(NULL);
+	wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+	wc.lpfnWndProc = (WNDPROC)WndProc;
+	wc.cbClsExtra = 0;
+	wc.cbWndExtra = 0;
+	wc.hInstance = m_hinstance;
+	wc.hIcon = LoadIcon(NULL, IDI_WINLOGO);
+	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wc.hbrBackground = NULL;
+	wc.lpszMenuName = NULL;
+	wc.lpszClassName = m_className.c_str();
+
+	if (!RegisterClass(&wc))
+	{
+		MessageBox(NULL, "Failed To Register The Window Class.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
+		return false;
+	}
+
+	exStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
+	style = WS_OVERLAPPEDWINDOW;
+
+	AdjustWindowRectEx(&windowRect, style, FALSE, exStyle);
+
+	if (!(m_window = CreateWindowEx(exStyle,
+		m_className.c_str(),
+		eye == VREye::Left ? "Left Eye" : "Right Eye",
+		style |
+		WS_CLIPSIBLINGS |
+		WS_CLIPCHILDREN,
+		0, 0,
+		windowRect.right - windowRect.left,
+		windowRect.bottom - windowRect.top,
+		NULL,
+		NULL,
+		m_hinstance,
+		NULL)))
+	{
+		Shutdown();
+		MessageBox(NULL, "Window Creation Error.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
+		return false;
+	}
+
+	static	PIXELFORMATDESCRIPTOR pfd =	
+	{
+		sizeof(PIXELFORMATDESCRIPTOR),
+		1,
+		PFD_DRAW_TO_WINDOW |
+		PFD_SUPPORT_OPENGL |
+		PFD_DOUBLEBUFFER,
+		PFD_TYPE_RGBA,
+		16,
+		0, 0, 0, 0, 0, 0,
+		0,
+		0,
+		0,
+		0, 0, 0, 0,
+		16,
+		0,
+		0,
+		PFD_MAIN_PLANE,
+		0,
+		0, 0, 0
+	};
+
+	if (!(m_hdc = GetDC(m_window)))
+	{
+		Shutdown();
+		MessageBox(NULL, "Can't Create A GL Device Context.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
+		return false;
+	}
+
+	if (!(pixelFormat = ChoosePixelFormat(m_hdc, &pfd)))
+	{
+		Shutdown();
+		MessageBox(NULL, "Can't Find A Suitable PixelFormat.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
+		return false;
+	}
+
+	if (!SetPixelFormat(m_hdc, pixelFormat, &pfd))
+	{
+		Shutdown();
+		MessageBox(NULL, "Can't Set The PixelFormat.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
+		return false;
+	}
+
+	if (!(m_hrc = wglCreateContext(m_hdc)))
+	{
+		Shutdown();
+		MessageBox(NULL, "Can't Create A GL Rendering Context.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
+		return false;
+	}
+
+	HGLRC currentContext = wglGetCurrentContext();
+	HDC currentDC = wglGetCurrentDC();
+
+	wglShareLists(currentContext, m_hrc);
+
+	ShowWindow(m_window, SW_SHOW);
+
+	return true;
+}
+
+void VRSystem_Fake::VREyeRenderWindow::Shutdown()
+{
+	if (m_hrc)
+	{
+		if (!wglDeleteContext(m_hrc))
+		{
+			MessageBox(NULL, "Release Rendering Context Failed.", "SHUTDOWN ERROR", MB_OK | MB_ICONINFORMATION);
+		}
+		m_hrc = NULL;
+	}
+
+	if (m_hdc && !ReleaseDC(m_window, m_hdc))
+	{
+		MessageBox(NULL, "Release Device Context Failed.", "SHUTDOWN ERROR", MB_OK | MB_ICONINFORMATION);
+		m_hdc = NULL;
+	}
+
+	if (m_window && !DestroyWindow(m_window))
+	{
+		MessageBox(NULL, "Could Not Release hWnd.", "SHUTDOWN ERROR", MB_OK | MB_ICONINFORMATION);
+		m_window = NULL;
+	}
+
+	if (!UnregisterClass(m_className.c_str(), m_hinstance))
+	{
+		MessageBox(NULL, "Could Not Unregister Class.", "SHUTDOWN ERROR", MB_OK | MB_ICONINFORMATION);
+		m_hinstance = NULL;
+	}
+}
+
+void VRSystem_Fake::VREyeRenderWindow::Render(uint32_t textureHandle)
+{
+	HGLRC prevContext = wglGetCurrentContext();
+	HDC prevDC = wglGetCurrentDC();
+
+	wglMakeCurrent(m_hdc, m_hrc);
+
+	glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glLoadIdentity();
+
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, textureHandle);
+
+	glBegin(GL_QUADS);
+	glColor3f(1.0f, 1.0f, 1.0f);
+	glTexCoord2f(0.0f, 0.0f);
+	glVertex2f(-1.0f, -1.0f);
+	glTexCoord2f(0.0f, 1.0f);
+	glVertex2f(-1.0f, 1.0f);
+	glTexCoord2f(1.0f, 1.0f);
+	glVertex2f(1.0f, 1.0f);
+	glTexCoord2f(1.0f, 0.0f);
+	glVertex2f(1.0f, -1.0f);
+	glEnd();
+
+	SwapBuffers(m_hdc);
+
+	wglMakeCurrent(prevDC, prevContext);
+}
+
+//////////////////////////////////////////////////////////////////////////
 
 VRSystem_Fake::VRSystem_Fake() :
 	controlledDeviceIdx(0),
@@ -34,6 +229,9 @@ bool VRSystem_Fake::Init()
 
 	gEngfuncs.pfnSetMousePos(gEngfuncs.GetWindowCenterX(), gEngfuncs.GetWindowCenterY());
 	prevTime = gEngfuncs.GetClientTime();
+
+	leftEyeRender.Init(VREye::Left);
+	rightEyeRender.Init(VREye::Right);
 
 	return true;
 }
@@ -218,7 +416,15 @@ int VRSystem_Fake::GetMaxTrackedDevices()
 
 void VRSystem_Fake::SubmitImage(VREye eye, uint32_t textureHandle)
 {
-	// No image to submit since we have no headset
+	switch (eye)
+	{
+		case VREye::Left:
+			leftEyeRender.Render(textureHandle);
+			break;
+		case VREye::Right:
+			rightEyeRender.Render(textureHandle);
+			break;
+	}
 }
 
 void VRSystem_Fake::PostPresentHandoff()
@@ -237,7 +443,7 @@ glm::mat4 VRSystem_Fake::GetProjectionMatrix(VREye eye, float nearZ, float farZ)
 {
 	// Since we have nothing to render, we don't care about that, we will just return an identity matrix
 	glm::mat4 identity(1.0f);
-	return identity;
+	return glm::perspective(M_PI * 0.5f, 4.0f / 3.0f, nearZ, farZ);
 }
 
 glm::mat4 VRSystem_Fake::GetEyeToHeadTransform(VREye eye)
