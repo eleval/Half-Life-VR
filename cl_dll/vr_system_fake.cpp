@@ -255,6 +255,11 @@ void VRSystem_Fake::Update()
 	int mouseY = 0;
 	gEngfuncs.GetMousePosition(&mouseX, &mouseY);
 
+	if (mouseX == 0 && mouseY == 0)
+	{
+		return;
+	}
+
 	const int deltaMouseX = mouseX - gEngfuncs.GetWindowCenterX();
 	const int deltaMouseY = mouseY - gEngfuncs.GetWindowCenterY();
 

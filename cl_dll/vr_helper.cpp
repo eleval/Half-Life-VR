@@ -43,6 +43,22 @@ void VR_Recenter()
 	gVRHelper.Recenter();
 }
 
+Vector GetOffsetInHLSpaceFromAbsoluteTrackingMatrix(const glm::mat4 & absoluteTrackingMatrix)
+{
+	glm::vec4 originInVRSpace = absoluteTrackingMatrix * glm::vec4(0, 0, .10, 1);
+	return Vector(originInVRSpace.x * VR_TO_HL.x * 10, -originInVRSpace.z * VR_TO_HL.z * 10, originInVRSpace.y * VR_TO_HL.y * 10);
+}
+
+Vector GetPositionInHLSpaceFromAbsoluteTrackingMatrix(const glm::mat4 & absoluteTrackingMatrix)
+{
+	Vector originInRelativeHLSpace = GetOffsetInHLSpaceFromAbsoluteTrackingMatrix(absoluteTrackingMatrix);
+
+	cl_entity_t *localPlayer = gEngfuncs.GetLocalPlayer();
+	Vector clientGroundPosition = localPlayer->curstate.origin;
+
+	return localPlayer->curstate.origin + originInRelativeHLSpace;
+}
+
 VRHelper::VRHelper() :
 	invertCenterTransform(1.0f)
 {
@@ -198,6 +214,11 @@ Vector VRHelper::GetHLAnglesFromVRMatrix(const glm::mat4 &mat)
 
 glm::mat4 VRHelper::GetModelViewMatrixFromAbsoluteTrackingMatrix(glm::mat4 &absoluteTrackingMatrix, Vector translate)
 {
+	glm::mat4 modelViewMatrix = absoluteTrackingMatrix;
+	modelViewMatrix[3][0] *= VR_TO_HL.x * 10.0f;
+	modelViewMatrix[3][1] *= VR_TO_HL.y * 10.0f;
+	modelViewMatrix[3][2] *= VR_TO_HL.z * 10.0f;
+
 	glm::mat4 hlToVRScaleMatrix(1.0f);
 	hlToVRScaleMatrix[0][0] = HL_TO_VR.x * 10.0f;
 	hlToVRScaleMatrix[1][1] = HL_TO_VR.y * 10.0f;
@@ -214,25 +235,8 @@ glm::mat4 VRHelper::GetModelViewMatrixFromAbsoluteTrackingMatrix(glm::mat4 &abso
 	switchYAndZTransitionMatrix[2][1] = 1;
 	switchYAndZTransitionMatrix[2][2] = 0;
 
-	glm::mat4 modelViewMatrix = absoluteTrackingMatrix * hlToVRScaleMatrix *switchYAndZTransitionMatrix * hlToVRTranslateMatrix;
-	//modelViewMatrix = glm::scale(modelViewMatrix, glm::vec3(13.0f, 13.0f, 13.0f));
+	modelViewMatrix = modelViewMatrix * switchYAndZTransitionMatrix * hlToVRTranslateMatrix;
 	return modelViewMatrix;
-}
-
-Vector GetOffsetInHLSpaceFromAbsoluteTrackingMatrix(const glm::mat4 & absoluteTrackingMatrix)
-{
-	glm::vec4 originInVRSpace = absoluteTrackingMatrix * glm::vec4(0, 0, .10, 1);
-	return Vector(originInVRSpace.x * VR_TO_HL.x * 10, -originInVRSpace.z * VR_TO_HL.z * 10, originInVRSpace.y * VR_TO_HL.y * 10);
-}
-
-Vector GetPositionInHLSpaceFromAbsoluteTrackingMatrix(const glm::mat4 & absoluteTrackingMatrix)
-{
-	Vector originInRelativeHLSpace = GetOffsetInHLSpaceFromAbsoluteTrackingMatrix(absoluteTrackingMatrix);
-
-	cl_entity_t *localPlayer = gEngfuncs.GetLocalPlayer();
-	Vector clientGroundPosition = localPlayer->curstate.origin;
-
-	return localPlayer->curstate.origin + originInRelativeHLSpace;
 }
 
 void VRHelper::PollEvents()
@@ -294,7 +298,7 @@ bool VRHelper::UpdatePositions(struct ref_params_s* pparams)
 			//Matrix4 m_mat4SeatedPose = ConvertSteamVRMatrixToMatrix4(vrSystem->GetSeatedZeroPoseToStandingAbsoluteTrackingPose()).invert();
 			//Matrix4 m_mat4StandingPose = vrInterface->GetRawZeroPoseToStandingAbsoluteTrackingPose().invert();
 
-			glm::mat4 m_mat4HMDPose = glm::inverse(GetDeviceTransform(VRTrackedDeviceIndex_Hmd));
+			glm::mat4 m_mat4HMDPose = glm::inverse(GetDeviceAbsoluteTransform(VRTrackedDeviceIndex_Hmd));
 
 			positions.m_mat4LeftProjection = GetHMDMatrixProjectionEye(VREye::Left);
 			positions.m_mat4RightProjection = GetHMDMatrixProjectionEye(VREye::Right);
