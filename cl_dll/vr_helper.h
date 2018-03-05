@@ -6,18 +6,18 @@
 
 #include <vector>
 
-class Positions
+class VRPositions
 {
 public:
 	std::vector<VRTrackedDevicePose> m_rTrackedDevicePose;
 
-	glm::mat4 m_mat4LeftProjection;
-	glm::mat4 m_mat4RightProjection;
+	glm::mat4 headsetLeftEyeProjection;
+	glm::mat4 headsetRightEyeProjection;
 
-	glm::mat4 m_mat4HmdModelView;
+	glm::mat4 headsetModelView;
 
-	glm::mat4 m_mat4LeftModelView;
-	glm::mat4 m_mat4RightModelView;
+	glm::mat4 headsetLeftEyeModelView;
+	glm::mat4 headsetRightEyeModelView;
 };
 
 class VRHelper
@@ -63,7 +63,7 @@ private:
 	Vector GetAnglesFromMatrix(const glm::mat4 &mat);
 	Vector GetHLAnglesFromVRMatrix(const glm::mat4 &mat);
 
-	Positions positions;
+	VRPositions positions;
 
 	Vector walkAngles;
 

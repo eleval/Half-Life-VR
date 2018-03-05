@@ -322,14 +322,14 @@ bool VRHelper::UpdatePositions()
 		{
 			const glm::mat4 headsetTransform = GetDeviceTransform(VRTrackedDeviceIndex_Hmd);
 
-			positions.m_mat4LeftProjection = GetHMDMatrixProjectionEye(VREye::Left);
-			positions.m_mat4RightProjection = GetHMDMatrixProjectionEye(VREye::Right);
+			positions.headsetLeftEyeProjection = GetHMDMatrixProjectionEye(VREye::Left);
+			positions.headsetRightEyeProjection = GetHMDMatrixProjectionEye(VREye::Right);
 
 			const Vector playerOrigin = GetPlayerViewOrg();
 
-			positions.m_mat4HmdModelView = TransformVRSpaceToHLSpace(headsetTransform, playerOrigin);
-			positions.m_mat4LeftModelView = TransformVRSpaceToHLSpace(vrSystem->GetEyeToHeadTransform(VREye::Left) * headsetTransform, playerOrigin);
-			positions.m_mat4RightModelView = TransformVRSpaceToHLSpace(vrSystem->GetEyeToHeadTransform(VREye::Right) * headsetTransform, playerOrigin);
+			positions.headsetModelView = TransformVRSpaceToHLSpace(headsetTransform, playerOrigin);
+			positions.headsetLeftEyeModelView = TransformVRSpaceToHLSpace(vrSystem->GetEyeToHeadTransform(VREye::Left) * headsetTransform, playerOrigin);
+			positions.headsetRightEyeModelView = TransformVRSpaceToHLSpace(vrSystem->GetEyeToHeadTransform(VREye::Right) * headsetTransform, playerOrigin);
 
 			UpdateGunPosition();
 
@@ -344,7 +344,7 @@ bool VRHelper::UpdatePositions()
 
 void VRHelper::PrepareVRScene(VREye eEye, struct ref_params_s* pparams)
 {
-	GetAnglesFromMatrix(positions.m_mat4LeftModelView).CopyToArray(pparams->viewangles);
+	GetAnglesFromMatrix(positions.headsetLeftEyeModelView).CopyToArray(pparams->viewangles);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, eEye == VREye::Left ? vrGLLeftEyeFrameBuffer : vrGLRightEyeFrameBuffer);
 
@@ -356,12 +356,12 @@ void VRHelper::PrepareVRScene(VREye eEye, struct ref_params_s* pparams)
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
-	glLoadMatrixf(eEye == VREye::Left ? glm::value_ptr((positions.m_mat4LeftProjection)) : glm::value_ptr((positions.m_mat4RightProjection)));
+	glLoadMatrixf(eEye == VREye::Left ? glm::value_ptr((positions.headsetLeftEyeProjection)) : glm::value_ptr((positions.headsetRightEyeProjection)));
 
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	glLoadIdentity();
-	const glm::mat4& modelViewMat = eEye == VREye::Left ? positions.m_mat4LeftModelView : positions.m_mat4RightModelView;
+	const glm::mat4& modelViewMat = eEye == VREye::Left ? positions.headsetLeftEyeModelView : positions.headsetRightEyeModelView;
 	glLoadMatrixf(glm::value_ptr(modelViewMat));
 
 	glDisable(GL_CULL_FACE);
@@ -394,7 +394,7 @@ void VRHelper::SubmitImages()
 
 void VRHelper::GetViewAngles(float * angles)
 {
-	GetAnglesFromMatrix(positions.m_mat4HmdModelView).CopyToArray(angles);
+	GetAnglesFromMatrix(positions.headsetModelView).CopyToArray(angles);
 }
 
 void VRHelper::GetWalkAngles(float * angles)
