@@ -38,7 +38,8 @@ public:
 	void GetWalkAngles(float * angles);
 
 	glm::mat4 GetCenteredRawDeviceTransform(VRTrackedDeviceIndex deviceIndex);
-	glm::mat4 GetDeviceAbsoluteTransform(VRTrackedDeviceIndex deviceIndex);
+	const glm::mat4& GetDeviceAbsoluteTransform(VRTrackedDeviceIndex deviceIndex);
+	const glm::mat4& GetDeviceHLSpaceTransform(VRTrackedDeviceIndex deviceIndex);
 
 	void Recenter();
 

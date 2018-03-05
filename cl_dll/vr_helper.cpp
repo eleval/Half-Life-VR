@@ -535,9 +535,14 @@ glm::mat4 VRHelper::GetCenteredRawDeviceTransform(VRTrackedDeviceIndex deviceInd
 	return invertCenterTransform * rawTrackedDevicePoses[deviceIndex].transform;
 }
 
-glm::mat4 VRHelper::GetDeviceAbsoluteTransform(VRTrackedDeviceIndex deviceIndex)
+const glm::mat4& VRHelper::GetDeviceAbsoluteTransform(VRTrackedDeviceIndex deviceIndex)
 {
 	return rawTrackedDevicePoses[deviceIndex].transform;
+}
+
+const glm::mat4& VRHelper::GetDeviceHLSpaceTransform(VRTrackedDeviceIndex deviceIndex)
+{
+	return hlSpaceVRTransforms.deviceModelViews[deviceIndex];
 }
 
 void VRHelper::Recenter()
