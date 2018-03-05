@@ -224,8 +224,8 @@ VRSystem_Fake::VRSystem_Fake() :
 bool VRSystem_Fake::Init()
 {
 	fakeDevices[FakeHeadsetIdx].position += glm::vec3(0.0f, 1.5f, 0.0f);
-	fakeDevices[FakeLeftHandControllerIdx].position += glm::vec3(-0.5f, 1.0f, -0.5f);
-	fakeDevices[FakeRightHandControllerIdx].position += glm::vec3(0.5f, 1.0f, -0.5f);
+	fakeDevices[FakeLeftHandControllerIdx].position += glm::vec3(0.5f, 1.0f, -0.5f);
+	fakeDevices[FakeRightHandControllerIdx].position += glm::vec3(-0.5f, 1.0f, -0.5f);
 
 	gEngfuncs.pfnSetMousePos(gEngfuncs.GetWindowCenterX(), gEngfuncs.GetWindowCenterY());
 	prevTime = gEngfuncs.GetClientTime();
@@ -255,6 +255,11 @@ void VRSystem_Fake::Update()
 	int mouseY = 0;
 	gEngfuncs.GetMousePosition(&mouseX, &mouseY);
 
+	if (mouseX == 0 || mouseY == 0) // GetMousePosition will always return 0 until the player moves its mouse at least once.
+	{
+		return;
+	}
+
 	const int deltaMouseX = mouseX - gEngfuncs.GetWindowCenterX();
 	const int deltaMouseY = mouseY - gEngfuncs.GetWindowCenterY();
 
@@ -266,7 +271,7 @@ void VRSystem_Fake::Update()
 	fakeDevice.rotation.x = std::min(std::max(-M_PI * 0.5f + 0.1f, fakeDevice.rotation.x), M_PI * 0.5f - 0.1f);
 
 	glm::vec3 forward(-sinf(fakeDevice.rotation.y), 0.0f, -cosf(fakeDevice.rotation.y));
-	glm::vec3 right(-sinf(fakeDevice.rotation.y - M_PI * 0.5f), 0.0f, -cosf(fakeDevice.rotation.y - M_PI * 0.5f));
+	glm::vec3 left(sinf(fakeDevice.rotation.y - M_PI * 0.5f), 0.0f, cosf(fakeDevice.rotation.y - M_PI * 0.5f));
 	glm::vec3 up(0.0f, 1.0f, 0.0f);
 
 	gEngfuncs.pfnSetMousePos(gEngfuncs.GetWindowCenterX(), gEngfuncs.GetWindowCenterY());
@@ -276,37 +281,32 @@ void VRSystem_Fake::Update()
 
 	if (keyboardState[VK_UP] >> 4)
 	{
-		fakeDevice.position += forward * deltaTime;
+		fakeDevice.position += glm::vec3(forward) * deltaTime;
 	}
 
 	if (keyboardState[VK_DOWN] >> 4)
 	{
-		fakeDevice.position -= forward * deltaTime;
+		fakeDevice.position -= glm::vec3(forward) * deltaTime;
 	}
 
 	if (keyboardState[VK_LEFT] >> 4)
 	{
-		fakeDevice.position -= right * deltaTime;
+		fakeDevice.position += glm::vec3(left) * deltaTime;
 	}
 
 	if (keyboardState[VK_RIGHT] >> 4)
 	{
-		fakeDevice.position += right * deltaTime;
-	}
-
-	if (keyboardState[VK_RIGHT] >> 4)
-	{
-		fakeDevice.position += right * deltaTime;
+		fakeDevice.position -= glm::vec3(left) * deltaTime;
 	}
 
 	if (keyboardState[VK_PRIOR] >> 4)
 	{
-		fakeDevice.position += up * deltaTime;
+		fakeDevice.position += glm::vec3(up) * deltaTime;
 	}
 
 	if (keyboardState[VK_NEXT] >> 4)
 	{
-		fakeDevice.position -= up * deltaTime;
+		fakeDevice.position -= glm::vec3(up) * deltaTime;
 	}
 
 	// Update controller buttons
@@ -364,7 +364,7 @@ void VRSystem_Fake::Update()
 		controllerState.axis[axis1].x = 0.0f;
 		SetControllerButtonState(controllerState, VRButton::Axis1, false);
 	}
-	
+
 	if (keyboardState[VK_END] >> 4)
 	{
 		if (!justChangedControlledDevice)
@@ -394,15 +394,21 @@ void VRSystem_Fake::WaitGetPoses(std::vector<VRTrackedDevicePose>& trackedPoses)
 		VRFakeDevice& fakeDevice = fakeDevices[i];
 
 		trackedPose.isValid = true;
-		trackedPose.transform = glm::mat4(1.0f);
 
 		const glm::mat4 translation = glm::translate(glm::mat4(1.0f), fakeDevice.position);
 
-		const glm::quat quat(fakeDevice.rotation);
-		const glm::mat4 rotation = glm::mat4_cast(quat);
+		const glm::vec3 forward(0.0f, 0.0f, -1.0f);
+		const glm::vec3 right(1.0f, 0.0f, 0.0f);
+		const glm::vec3 up(0.0f, 1.0f, 0.0f);
 
-		trackedPose.transform = translation * rotation;
-		
+		glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), fakeDevice.rotation.y, up);
+		rotation = glm::rotate(rotation, fakeDevice.rotation.x, right);
+		rotation = glm::rotate(rotation, fakeDevice.rotation.z, forward);
+
+		const glm::mat4 lookAt = glm::lookAtRH(glm::vec3(0.0f, 0.0f, 0.0f), forward, up);
+
+		trackedPose.transform = translation * lookAt * rotation;
+
 		trackedPose.velocity.x = fakeDevice.velocity.x;
 		trackedPose.velocity.y = fakeDevice.velocity.y;
 		trackedPose.velocity.z = fakeDevice.velocity.z;
@@ -443,12 +449,13 @@ glm::mat4 VRSystem_Fake::GetProjectionMatrix(VREye eye, float nearZ, float farZ)
 {
 	// Since we have nothing to render, we don't care about that, we will just return an identity matrix
 	glm::mat4 identity(1.0f);
-	return glm::perspective(M_PI * 0.5f, 4.0f / 3.0f, nearZ, farZ);
+	return glm::perspectiveRH(M_PI * 0.5f, 4.0f / 3.0f, nearZ, farZ);
 }
 
 glm::mat4 VRSystem_Fake::GetEyeToHeadTransform(VREye eye)
 {
-	// Since the eye is at the same place as the headset in fake VR, return an indentity Matrix
+	// Since the eye is at the same place as the headset in fake VR, return an identity Matrix
+	// TODO : We could return a real eye to head transform now since we have a eye render
 	glm::mat4 identity(1.0f);
 	return identity;
 }
