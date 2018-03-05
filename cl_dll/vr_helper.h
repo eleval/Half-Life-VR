@@ -58,9 +58,9 @@ private:
 	Vector GetPlayerViewOrg();
 	glm::vec3 GetTranslationFromTransform(const glm::mat4& transform);
 	glm::quat GetRotationFromTransform(const glm::mat4& transform);
-	glm::mat4 GetModelViewMatrixFromAbsoluteTrackingMatrix(const glm::mat4 &absoluteTrackingMatrix, Vector translate);
+	glm::mat4 TransformVRSpaceToHLSpace(const glm::mat4 &absoluteTrackingMatrix, Vector translate);
 
-	Vector GetHLViewAnglesFromVRMatrix(const glm::mat4 &mat);
+	Vector GetAnglesFromMatrix(const glm::mat4 &mat);
 	Vector GetHLAnglesFromVRMatrix(const glm::mat4 &mat);
 
 	Positions positions;

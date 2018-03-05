@@ -157,21 +157,14 @@ glm::mat4 VRHelper::GetHMDMatrixProjectionEye(VREye eEye)
 
 extern void VectorAngles(const float *forward, float *angles);
 
-Vector VRHelper::GetHLViewAnglesFromVRMatrix(const glm::mat4 &mat)
+Vector VRHelper::GetAnglesFromMatrix(const glm::mat4 &mat)
 {
-	glm::mat4 matInverse = glm::inverse(mat);
-	matInverse[3] = glm::vec4(0.0, 0.0, 0.0, 1.0f);
+	glm::mat4 rotationOnly = mat;
+	rotationOnly[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	glm::mat4 hlSpaceMat;
-
-	hlSpaceMat[0] = -matInverse[2];
-	hlSpaceMat[1] = -matInverse[0];
-	hlSpaceMat[2] = matInverse[1];
-	hlSpaceMat[3].w = 1.0f;
-
-	glm::vec4 v1 = hlSpaceMat * glm::vec4(1, 0, 0, 0);
-	glm::vec4 v2 = hlSpaceMat * glm::vec4(0, 1, 0, 0);
-	glm::vec4 v3 = hlSpaceMat * glm::vec4(0, 0, 1, 0);
+	glm::vec4 v1 = rotationOnly * glm::vec4(1, 0, 0, 0);
+	glm::vec4 v2 = rotationOnly * glm::vec4(0, 1, 0, 0);
+	glm::vec4 v3 = rotationOnly * glm::vec4(0, 0, 1, 0);
 
 	v1 = glm::normalize(v1);
 	v2 = glm::normalize(v2);
@@ -235,7 +228,7 @@ glm::quat VRHelper::GetRotationFromTransform(const glm::mat4& transform)
 	return rot;
 }
 
-glm::mat4 VRHelper::GetModelViewMatrixFromAbsoluteTrackingMatrix(const glm::mat4 &absoluteTrackingMatrix, Vector translate)
+glm::mat4 VRHelper::TransformVRSpaceToHLSpace(const glm::mat4 &absoluteTrackingMatrix, Vector translate)
 {
 	glm::mat4 hlSpaceMat;
 	glm::mat4 inverseVR = glm::inverse(absoluteTrackingMatrix);
@@ -327,16 +320,16 @@ bool VRHelper::UpdatePositions()
 
 		if (positions.m_rTrackedDevicePose[VRTrackedDeviceIndex_Hmd].isValid)
 		{
-			positions.m_mat4HmdModelView = GetDeviceTransform(VRTrackedDeviceIndex_Hmd);
+			const glm::mat4 headsetTransform = GetDeviceTransform(VRTrackedDeviceIndex_Hmd);
 
 			positions.m_mat4LeftProjection = GetHMDMatrixProjectionEye(VREye::Left);
 			positions.m_mat4RightProjection = GetHMDMatrixProjectionEye(VREye::Right);
 
-			cl_entity_t* localPlayer = gEngfuncs.GetLocalPlayer();
-			Vector playerOrigin = localPlayer->curstate.origin;
+			const Vector playerOrigin = GetPlayerViewOrg();
 
-			positions.m_mat4LeftModelView = GetModelViewMatrixFromAbsoluteTrackingMatrix(vrSystem->GetEyeToHeadTransform(VREye::Left) * positions.m_mat4HmdModelView, playerOrigin);
-			positions.m_mat4RightModelView = GetModelViewMatrixFromAbsoluteTrackingMatrix(vrSystem->GetEyeToHeadTransform(VREye::Right) * positions.m_mat4HmdModelView, playerOrigin);
+			positions.m_mat4HmdModelView = TransformVRSpaceToHLSpace(headsetTransform, playerOrigin);
+			positions.m_mat4LeftModelView = TransformVRSpaceToHLSpace(vrSystem->GetEyeToHeadTransform(VREye::Left) * headsetTransform, playerOrigin);
+			positions.m_mat4RightModelView = TransformVRSpaceToHLSpace(vrSystem->GetEyeToHeadTransform(VREye::Right) * headsetTransform, playerOrigin);
 
 			UpdateGunPosition();
 
@@ -351,7 +344,7 @@ bool VRHelper::UpdatePositions()
 
 void VRHelper::PrepareVRScene(VREye eEye, struct ref_params_s* pparams)
 {
-	GetHLViewAnglesFromVRMatrix(positions.m_mat4LeftModelView).CopyToArray(pparams->viewangles);
+	GetAnglesFromMatrix(positions.m_mat4LeftModelView).CopyToArray(pparams->viewangles);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, eEye == VREye::Left ? vrGLLeftEyeFrameBuffer : vrGLRightEyeFrameBuffer);
 
@@ -401,7 +394,7 @@ void VRHelper::SubmitImages()
 
 void VRHelper::GetViewAngles(float * angles)
 {
-	GetHLViewAnglesFromVRMatrix(GetDeviceTransform(VRTrackedDeviceIndex_Hmd)).CopyToArray(angles);
+	GetAnglesFromMatrix(positions.m_mat4HmdModelView).CopyToArray(angles);
 }
 
 void VRHelper::GetWalkAngles(float * angles)
@@ -494,7 +487,7 @@ void VRHelper::SendPositionUpdateToServer()
 		glm::mat4 leftControllerAbsoluteTrackingMatrix = GetDeviceTransform(leftControllerIndex);
 		leftControllerOffset = GetOffsetInHLSpaceFromAbsoluteTrackingMatrix(leftControllerAbsoluteTrackingMatrix);
 		leftControllerOffset.z += localPlayer->curstate.mins.z;
-		leftControllerAngles = GetHLViewAnglesFromVRMatrix(leftControllerAbsoluteTrackingMatrix);
+		leftControllerAngles = GetAnglesFromMatrix(leftControllerAbsoluteTrackingMatrix);
 		isLeftControllerValid = true;
 	}
 
