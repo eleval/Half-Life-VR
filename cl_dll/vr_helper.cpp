@@ -20,6 +20,8 @@
 
 #include "cl_util.h"
 
+#include <string>
+
 #ifndef MAX_COMMAND_SIZE
 #define MAX_COMMAND_SIZE 256
 #endif
@@ -97,7 +99,7 @@ void VRHelper::Init()
 		{
 			vrSystem = &VRSystem_Fake::Instance();
 		}
-		
+
 		if (!vrSystem->Init())
 		{
 			Exit(TEXT("Failed to initialize VR enviroment. Make sure your headset is properly connected and SteamVR is running."));
@@ -157,10 +159,29 @@ extern void VectorAngles(const float *forward, float *angles);
 
 Vector VRHelper::GetHLViewAnglesFromVRMatrix(const glm::mat4 &mat)
 {
-	const glm::vec3 forward(mat[2][0], mat[2][1], mat[2][2]);
+	glm::mat4 matInverse = glm::inverse(mat);
+	matInverse[3] = glm::vec4(0.0, 0.0, 0.0, 1.0f);
+
+	glm::mat4 hlSpaceMat;
+
+	hlSpaceMat[0] = -matInverse[2];
+	hlSpaceMat[1] = -matInverse[0];
+	hlSpaceMat[2] = matInverse[1];
+	hlSpaceMat[3].w = 1.0f;
+
+	glm::vec4 v1 = hlSpaceMat * glm::vec4(1, 0, 0, 0);
+	glm::vec4 v2 = hlSpaceMat * glm::vec4(0, 1, 0, 0);
+	glm::vec4 v3 = hlSpaceMat * glm::vec4(0, 0, 1, 0);
+
+	v1 = glm::normalize(v1);
+	v2 = glm::normalize(v2);
+	v3 = glm::normalize(v3);
+
+	Vector forward(-v1.z, -v2.z, -v3.z);
 
 	Vector angles;
-	VectorAngles(Vector(forward.x, -forward.z, forward.y), angles);
+	VectorAngles(forward, angles);
+	angles.x = 360.f - angles.x;	// viewangles pitch is inverted
 	return angles;
 }
 
@@ -184,49 +205,10 @@ Vector VRHelper::GetHLAnglesFromVRMatrix(const glm::mat4 &mat)
 	return angles;
 }
 
-glm::mat4 VRHelper::TransformVRSpaceToHLSpace(const glm::mat4& vrSpaceMatrix)
-{
-	glm::mat4 hlToVRScaleMatrix(1.0f);
-	hlToVRScaleMatrix[0][0] = HL_TO_VR.x * 10.0f;
-	hlToVRScaleMatrix[1][1] = HL_TO_VR.y * 10.0f;
-	hlToVRScaleMatrix[2][2] = HL_TO_VR.z * 10.0f;
-
-	glm::mat4 switchYAndZTransitionMatrix(1.0f);
-	switchYAndZTransitionMatrix[1][1] = 0;
-	switchYAndZTransitionMatrix[1][2] = -1;
-	switchYAndZTransitionMatrix[2][1] = 1;
-	switchYAndZTransitionMatrix[2][2] = 0;
-
-	/*const glm::mat4 modelViewMatrix = vrSpaceMatrix * hlToVRScaleMatrix * switchYAndZTransitionMatrix;
-	//modelViewMatrix = glm::scale(modelViewMatrix, glm::vec3(13.0f, 13.0f, 13.0f));
-	return modelViewMatrix;*/
-
-	glm::vec3 translation = GetTranslationFromTransform(vrSpaceMatrix);
-	glm::quat rotation = GetRotationFromTransform(vrSpaceMatrix);
-
-	translation = glm::vec3(translation.x * VR_TO_HL.x * 10.0f, -translation.z * VR_TO_HL.z * 10.0f, translation.y * VR_TO_HL.y * 10.0f); // This has side effects on controllers for some reasons, check later (and check with Vive, might be an issue related with the fake system)
-	glm::vec3 euler = glm::eulerAngles(rotation);
-
-	// Invert y & z (and negate z)
-	std::swap(euler.y, euler.z);
-	euler.z = -euler.z;
-
-	const glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), translation);
-	const glm::quat quat(euler);
-	const glm::mat4 rotationMatrix = glm::mat4_cast(quat);
-
-	return translationMatrix * rotationMatrix;
-
-	/*glm::vec4 originInVRSpace = vrSpaceMatrix * glm::vec4(0, 0, .10, 1);
-	return Vector(originInVRSpace.x * VR_TO_HL.x * 10, -originInVRSpace.z * VR_TO_HL.z * 10, originInVRSpace.y * VR_TO_HL.y * 10);*/
-}
-
-glm::mat4 VRHelper::TranslateToPlayerView(const glm::mat4 transform)
+Vector VRHelper::GetPlayerViewOrg()
 {
 	cl_entity_t *localPlayer = gEngfuncs.GetLocalPlayer();
-	Vector playerOrigin = localPlayer->curstate.origin;
-
-	return glm::translate(glm::mat4(1.0f), glm::vec3(playerOrigin.x, playerOrigin.y, playerOrigin.z)) * transform;
+	return localPlayer->curstate.origin;
 }
 
 glm::vec3 VRHelper::GetTranslationFromTransform(const glm::mat4& transform)
@@ -253,27 +235,25 @@ glm::quat VRHelper::GetRotationFromTransform(const glm::mat4& transform)
 	return rot;
 }
 
-glm::mat4 VRHelper::GetModelViewMatrixFromAbsoluteTrackingMatrix(glm::mat4 &absoluteTrackingMatrix, Vector translate)
+glm::mat4 VRHelper::GetModelViewMatrixFromAbsoluteTrackingMatrix(const glm::mat4 &absoluteTrackingMatrix, Vector translate)
 {
-	glm::mat4 hlToVRScaleMatrix(1.0f);
-	hlToVRScaleMatrix[0][0] = HL_TO_VR.x * 10.0f;
-	hlToVRScaleMatrix[1][1] = HL_TO_VR.y * 10.0f;
-	hlToVRScaleMatrix[2][2] = HL_TO_VR.z * 10.0f;
+	glm::mat4 hlSpaceMat;
+	glm::mat4 inverseVR = glm::inverse(absoluteTrackingMatrix);
+	inverseVR[3] = glm::vec4(0.0, 0.0, 0.0, 1.0f);
 
-	glm::mat4 hlToVRTranslateMatrix(1.0f);
-	hlToVRTranslateMatrix[3][0] = translate.x;
-	hlToVRTranslateMatrix[3][1] = translate.y;
-	hlToVRTranslateMatrix[3][2] = translate.z;
+	hlSpaceMat[0] = -inverseVR[2];
+	hlSpaceMat[1] = -inverseVR[0];
+	hlSpaceMat[2] = inverseVR[1];
+	hlSpaceMat[3].w = 1.0f;
 
-	glm::mat4 switchYAndZTransitionMatrix(1.0f);
-	switchYAndZTransitionMatrix[1][1] = 0;
-	switchYAndZTransitionMatrix[1][2] = -1;
-	switchYAndZTransitionMatrix[2][1] = 1;
-	switchYAndZTransitionMatrix[2][2] = 0;
+	glm::mat4 hlTrans(1.0f);
 
-	glm::mat4 modelViewMatrix = absoluteTrackingMatrix * hlToVRScaleMatrix *switchYAndZTransitionMatrix * hlToVRTranslateMatrix;
-	//modelViewMatrix = glm::scale(modelViewMatrix, glm::vec3(13.0f, 13.0f, 13.0f));
-	return modelViewMatrix;
+	hlTrans[3].x = absoluteTrackingMatrix[3].z * VR_TO_HL.z * 10.0f - translate.x;
+	hlTrans[3].y = absoluteTrackingMatrix[3].x * VR_TO_HL.x * 10.0f - translate.y;
+	hlTrans[3].z = -absoluteTrackingMatrix[3].y * VR_TO_HL.y * 10.0f - translate.z;
+	hlTrans[3].w = 1.0f;
+
+	return hlSpaceMat * hlTrans;
 }
 
 Vector GetOffsetInHLSpaceFromAbsoluteTrackingMatrix(const glm::mat4 & absoluteTrackingMatrix)
@@ -352,14 +332,11 @@ bool VRHelper::UpdatePositions()
 			positions.m_mat4LeftProjection = GetHMDMatrixProjectionEye(VREye::Left);
 			positions.m_mat4RightProjection = GetHMDMatrixProjectionEye(VREye::Right);
 
-			positions.m_mat4LeftModelView = vrSystem->GetEyeToHeadTransform(VREye::Left) * positions.m_mat4HmdModelView;
-			positions.m_mat4RightModelView = vrSystem->GetEyeToHeadTransform(VREye::Right)* positions.m_mat4HmdModelView;
+			cl_entity_t* localPlayer = gEngfuncs.GetLocalPlayer();
+			Vector playerOrigin = localPlayer->curstate.origin;
 
-			/*cl_entity_t *localPlayer = gEngfuncs.GetLocalPlayer();
-			Vector clientGroundPosition = localPlayer->curstate.origin;
-			clientGroundPosition.z += localPlayer->curstate.mins.z;
-			positions.m_mat4LeftModelView = GetHMDMatrixPoseEye(VREye::Left) * GetModelViewMatrixFromAbsoluteTrackingMatrix(m_mat4HMDPose, -clientGroundPosition);
-			positions.m_mat4RightModelView = GetHMDMatrixPoseEye(VREye::Right) * GetModelViewMatrixFromAbsoluteTrackingMatrix(m_mat4HMDPose, -clientGroundPosition);*/
+			positions.m_mat4LeftModelView = GetModelViewMatrixFromAbsoluteTrackingMatrix(vrSystem->GetEyeToHeadTransform(VREye::Left) * positions.m_mat4HmdModelView, playerOrigin);
+			positions.m_mat4RightModelView = GetModelViewMatrixFromAbsoluteTrackingMatrix(vrSystem->GetEyeToHeadTransform(VREye::Right) * positions.m_mat4HmdModelView, playerOrigin);
 
 			UpdateGunPosition();
 
@@ -391,7 +368,8 @@ void VRHelper::PrepareVRScene(VREye eEye, struct ref_params_s* pparams)
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	glLoadIdentity();
-	glLoadMatrixf(eEye == VREye::Left ? glm::value_ptr((positions.m_mat4LeftModelView)) : glm::value_ptr((positions.m_mat4RightModelView)));
+	const glm::mat4& modelViewMat = eEye == VREye::Left ? positions.m_mat4LeftModelView : positions.m_mat4RightModelView;
+	glLoadMatrixf(glm::value_ptr(modelViewMat));
 
 	glDisable(GL_CULL_FACE);
 	glCullFace(GL_NONE);
@@ -423,7 +401,7 @@ void VRHelper::SubmitImages()
 
 void VRHelper::GetViewAngles(float * angles)
 {
-	GetHLViewAnglesFromVRMatrix(positions.m_mat4HmdModelView).CopyToArray(angles);
+	GetHLViewAnglesFromVRMatrix(GetDeviceTransform(VRTrackedDeviceIndex_Hmd)).CopyToArray(angles);
 }
 
 void VRHelper::GetWalkAngles(float * angles)
@@ -433,46 +411,27 @@ void VRHelper::GetWalkAngles(float * angles)
 
 void VRHelper::GetViewOrg(float * org)
 {
-	glm::mat4 hlSpaceView(1.0f);
+	glm::vec3 vrTranslation;
 	if (vr_renderEyeInWindow->value == 0.0f)
 	{
-		//Vector trans = GetPositionInHLSpaceFromAbsoluteTrackingMatrix(GetDeviceTransform(VRTrackedDeviceIndex_Hmd));
-		//trans.CopyToArray(org);
-		hlSpaceView = TransformVRSpaceToHLSpace(positions.m_mat4HmdModelView);
+		vrTranslation = GetDeviceTransform(VRTrackedDeviceIndex_Hmd)[3];
 	}
-	else if ( vr_renderEyeInWindow->value == 1.0f)
+	else if (vr_renderEyeInWindow->value == 1.0f)
 	{
-		/*glm::mat4 a = positions.m_mat4LeftModelView;
-		a = glm::inverse(a);
-		glm::vec3 scale;
-		glm::quat rot;
-		glm::vec3 trans;
-		glm::vec3 skew;
-		glm::vec4 perspective;
-		glm::decompose(a, scale, rot, trans, skew, perspective);
-		Vector trans2(trans.x, trans.y, trans.z);
-		trans2.CopyToArray(org);*/
-		hlSpaceView = TransformVRSpaceToHLSpace(positions.m_mat4LeftModelView);
+		// TODO
 	}
 	else
 	{
-		/*glm::mat4 a = positions.m_mat4RightModelView;
-		a = glm::inverse(a);
-		glm::vec3 scale;
-		glm::quat rot;
-		glm::vec3 trans;
-		glm::vec3 skew;
-		glm::vec4 perspective;
-		glm::decompose(a, scale, rot, trans, skew, perspective);
-		Vector trans2(trans.x, trans.y, trans.z);
-		trans2.CopyToArray(org);*/
-		hlSpaceView = TransformVRSpaceToHLSpace(positions.m_mat4RightModelView);
+		// TODO
 	}
 
-	const glm::mat4 playerSpaceView = TranslateToPlayerView(hlSpaceView);
-	const glm::vec3 translation = GetTranslationFromTransform(playerSpaceView);
-	Vector hlVectorTranslation(translation.x, translation.y, translation.z);
-	hlVectorTranslation.CopyToArray(org);
+	Vector playerOrg = GetPlayerViewOrg();
+	Vector hlTrans;
+	hlTrans.x = -vrTranslation.z * VR_TO_HL.z * 10.0f + playerOrg.x;
+	hlTrans.y = -vrTranslation.x * VR_TO_HL.x * 10.0f + playerOrg.y;
+	hlTrans.z = vrTranslation.y * VR_TO_HL.y * 10.0f + playerOrg.z;
+
+	hlTrans.CopyToArray(org);
 }
 
 void VRHelper::UpdateGunPosition()
@@ -535,7 +494,7 @@ void VRHelper::SendPositionUpdateToServer()
 		glm::mat4 leftControllerAbsoluteTrackingMatrix = GetDeviceTransform(leftControllerIndex);
 		leftControllerOffset = GetOffsetInHLSpaceFromAbsoluteTrackingMatrix(leftControllerAbsoluteTrackingMatrix);
 		leftControllerOffset.z += localPlayer->curstate.mins.z;
-		leftControllerAngles = GetHLAnglesFromVRMatrix(leftControllerAbsoluteTrackingMatrix);
+		leftControllerAngles = GetHLViewAnglesFromVRMatrix(leftControllerAbsoluteTrackingMatrix);
 		isLeftControllerValid = true;
 	}
 
@@ -599,7 +558,6 @@ void VRHelper::Recenter()
 
 void RenderLine(Vector v1, Vector v2, Vector color)
 {
-	glLineWidth(3.0f);
 	glColor4f(color.x, color.y, color.z, 1.0f);
 	glBegin(GL_LINES);
 	glVertex3f(v1.x, v1.y, v1.z);
@@ -610,36 +568,36 @@ void RenderLine(Vector v1, Vector v2, Vector color)
 
 void VRHelper::TestRenderControllerPosition(bool leftOrRight)
 {
- 	VRTrackedDeviceIndex controllerIndex = vrSystem->GetTrackedDeviceIndexForControllerRole(leftOrRight ? VRTrackedControllerRole::LeftHand : VRTrackedControllerRole::RightHand);
+	VRTrackedDeviceIndex controllerIndex = vrSystem->GetTrackedDeviceIndexForControllerRole(leftOrRight ? VRTrackedControllerRole::LeftHand : VRTrackedControllerRole::RightHand);
 
 	if (controllerIndex > 0 && controllerIndex != VRTrackedDeviceIndexInvalid && positions.m_rTrackedDevicePose[controllerIndex].isValid)
 	{
 		const glm::mat4 controllerAbsoluteTrackingMatrix = GetDeviceTransform(controllerIndex);
-		const glm::mat4 controllerHLMatrix = TranslateToPlayerView(TransformVRSpaceToHLSpace(controllerAbsoluteTrackingMatrix));
+		const glm::mat4 controllerHLMatrix(1.0f);//TranslateToPlayerView(TransformVRSpaceToHLSpace(controllerAbsoluteTrackingMatrix));
 		const glm::vec3 controllerTranslation = GetTranslationFromTransform(controllerHLMatrix);
 		Vector originInHLSpace = Vector(controllerTranslation.x, controllerTranslation.y, controllerTranslation.z);
-		
-		glm::vec4 forwardInVRSpace = controllerHLMatrix * glm::vec4(0, 10, 0, 0);
-		glm::vec4 rightInVRSpace = controllerHLMatrix * glm::vec4(10, 0, 0, 0);
+
+		glm::vec4 forwardInVRSpace = controllerHLMatrix * glm::vec4(10, 0, 0, 0);
+		glm::vec4 rightInVRSpace = controllerHLMatrix * glm::vec4(0, 10, 0, 0);
 		glm::vec4 upInVRSpace = controllerHLMatrix * glm::vec4(0, 0, 10, 0);
 
 		Vector forward(forwardInVRSpace.x, forwardInVRSpace.y, forwardInVRSpace.z);
 		Vector right(rightInVRSpace.x, rightInVRSpace.y, rightInVRSpace.z);
 		Vector up(upInVRSpace.x, upInVRSpace.y, upInVRSpace.z);
 
-		/*Vector forward(forwardInVRSpace.x * VR_TO_HL.x * 3, -forwardInVRSpace.z * VR_TO_HL.z * 3, forwardInVRSpace.y * VR_TO_HL.y * 3);
-		Vector right(rightInVRSpace.x * VR_TO_HL.x * 3, -rightInVRSpace.z * VR_TO_HL.z * 3, rightInVRSpace.y * VR_TO_HL.y * 3);
-		Vector up(upInVRSpace.x * VR_TO_HL.x * 3, -upInVRSpace.z * VR_TO_HL.z * 3, upInVRSpace.y * VR_TO_HL.y * 3);*/
-/*
-		if (leftOrRight)
-		{
-			right = -right; // left
-		}
-*/	
 		RenderLine(originInHLSpace, originInHLSpace + forward, Vector(1, 0, 0));
 		RenderLine(originInHLSpace, originInHLSpace + right, Vector(0, 1, 0));
 		RenderLine(originInHLSpace, originInHLSpace + up, Vector(0, 0, 1));
 	}
+
+	// Render world axis at player's origin
+	cl_entity_t *localPlayer = gEngfuncs.GetLocalPlayer();
+	Vector playerOrigin = localPlayer->curstate.origin;
+
+	glLineWidth(1.0f);
+	RenderLine(playerOrigin, playerOrigin + Vector(100, 0, 0), Vector(1, 0, 0));
+	glLineWidth(5.0f);
+	RenderLine(playerOrigin, playerOrigin + Vector(0, 100, 0), Vector(0, 1, 0));
+	glLineWidth(10.0f);
+	RenderLine(playerOrigin, playerOrigin + Vector(0, 0, 100), Vector(0, 0, 1));
 }
-
-
