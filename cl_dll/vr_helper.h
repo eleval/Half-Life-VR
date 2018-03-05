@@ -40,6 +40,9 @@ public:
 	glm::mat4 GetCenteredRawDeviceTransform(VRTrackedDeviceIndex deviceIndex);
 	const glm::mat4& GetDeviceAbsoluteTransform(VRTrackedDeviceIndex deviceIndex);
 	const glm::mat4& GetDeviceHLSpaceTransform(VRTrackedDeviceIndex deviceIndex);
+	glm::vec3 GetDeviceHLSpaceTranslation(VRTrackedDeviceIndex deviceIndex);
+
+	void DecomposeHLSpaceTransform(const glm::mat4& mat, glm::vec3& outForward, glm::vec3& outLeft, glm::vec3& outUp);
 
 	void Recenter();
 
@@ -64,8 +67,6 @@ private:
 
 	HLSpaceVRTransforms hlSpaceVRTransforms;
 	std::vector<VRTrackedDevicePose> rawTrackedDevicePoses;
-
-	Vector walkAngles;
 
 	glm::mat4 centerTransform;
 	glm::mat4 invertCenterTransform;
