@@ -224,8 +224,8 @@ VRSystem_Fake::VRSystem_Fake() :
 bool VRSystem_Fake::Init()
 {
 	fakeDevices[FakeHeadsetIdx].position += glm::vec3(0.0f, 1.5f, 0.0f);
-	fakeDevices[FakeLeftHandControllerIdx].position += glm::vec3(0.5f, 1.0f, -0.5f);
-	fakeDevices[FakeRightHandControllerIdx].position += glm::vec3(-0.5f, 1.0f, -0.5f);
+	fakeDevices[FakeLeftHandControllerIdx].position += glm::vec3(-0.5f, 1.0f, -0.5f);
+	fakeDevices[FakeRightHandControllerIdx].position += glm::vec3(0.5f, 1.0f, -0.5f);
 
 	gEngfuncs.pfnSetMousePos(gEngfuncs.GetWindowCenterX(), gEngfuncs.GetWindowCenterY());
 	prevTime = gEngfuncs.GetClientTime();
