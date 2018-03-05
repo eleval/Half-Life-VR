@@ -6,15 +6,13 @@
 
 #include <vector>
 
-class VRPositions
+class HLSpaceVRTransforms
 {
 public:
-	std::vector<VRTrackedDevicePose> m_rTrackedDevicePose;
+	glm::mat4 deviceModelViews[VRMaxTrackedDeviceCount];
 
 	glm::mat4 headsetLeftEyeProjection;
 	glm::mat4 headsetRightEyeProjection;
-
-	glm::mat4 headsetModelView;
 
 	glm::mat4 headsetLeftEyeModelView;
 	glm::mat4 headsetRightEyeModelView;
@@ -39,7 +37,7 @@ public:
 
 	void GetWalkAngles(float * angles);
 
-	glm::mat4 GetDeviceTransform(VRTrackedDeviceIndex deviceIndex);
+	glm::mat4 GetCenteredRawDeviceTransform(VRTrackedDeviceIndex deviceIndex);
 	glm::mat4 GetDeviceAbsoluteTransform(VRTrackedDeviceIndex deviceIndex);
 
 	void Recenter();
@@ -63,7 +61,8 @@ private:
 	Vector GetAnglesFromMatrix(const glm::mat4 &mat);
 	Vector GetHLAnglesFromVRMatrix(const glm::mat4 &mat);
 
-	VRPositions positions;
+	HLSpaceVRTransforms hlSpaceVRTransforms;
+	std::vector<VRTrackedDevicePose> rawTrackedDevicePoses;
 
 	Vector walkAngles;
 
