@@ -40,7 +40,7 @@ glm::mat4 ConvertSteamVRMatrixToMatrix4(const vr::HmdMatrix34_t &mat)
 		mat.m[0][0], mat.m[1][0], mat.m[2][0], 0.0f,
 		mat.m[0][1], mat.m[1][1], mat.m[2][1], 0.0f,
 		mat.m[0][2], mat.m[1][2], mat.m[2][2], 0.0f,
-		mat.m[0][3], mat.m[1][3], mat.m[2][3], 0.1f
+		mat.m[0][3], mat.m[1][3], mat.m[2][3], 1.0f
 	);
 }
 

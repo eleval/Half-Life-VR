@@ -28,8 +28,8 @@
 
 extern engine_studio_api_t IEngineStudio;
 
-const glm::vec3 HL_TO_VR(2.3f / 10.f, 2.2f / 10.f, 2.3f / 10.f);
-const glm::vec3 VR_TO_HL(1.f / HL_TO_VR.x, 1.f / HL_TO_VR.y, 1.f / HL_TO_VR.z);
+const glm::vec3 VR_TO_HL(64.0f / 1.22f, 64.0f / 1.22f, 64.0f / 1.22f); // 1.22m = 64 units
+const glm::vec3 HL_TO_VR(1.0f / VR_TO_HL.x, 1.0f / VR_TO_HL.y, 1.0f / VR_TO_HL.z);
 const float FLOOR_OFFSET = 10;
 
 VRHelper gVRHelper;
@@ -66,7 +66,7 @@ void VRHelper::Init()
 	//Register Helper convars
 	vr_weapontilt = gEngfuncs.pfnRegisterVariable("vr_weapontilt", "-25", FCVAR_ARCHIVE);
 	vr_roomcrouch = gEngfuncs.pfnRegisterVariable("vr_roomcrouch", "1", FCVAR_ARCHIVE);
-	vr_systemType = gEngfuncs.pfnRegisterVariable("vr_systemType", "1", FCVAR_ARCHIVE);
+	vr_systemType = gEngfuncs.pfnRegisterVariable("vr_systemType", "0", FCVAR_ARCHIVE);
 	vr_showPlayer = gEngfuncs.pfnRegisterVariable("vr_showPlayer", "0", 0);
 	vr_renderEyeInWindow = gEngfuncs.pfnRegisterVariable("vr_renderEyeInWindow", "0", 0); // 0 = Classic preview - 1 = Left eye - 2 = Right eye
 
@@ -245,9 +245,9 @@ glm::mat4 VRHelper::TransformVRSpaceToHLSpace(const glm::mat4 &absoluteTrackingM
 
 	glm::mat4 hlTrans(1.0f);
 
-	hlTrans[3].x = absoluteTrackingMatrix[3].z * VR_TO_HL.z * 10.0f - translate.x;
-	hlTrans[3].y = absoluteTrackingMatrix[3].x * VR_TO_HL.x * 10.0f - translate.y;
-	hlTrans[3].z = -absoluteTrackingMatrix[3].y * VR_TO_HL.y * 10.0f - translate.z;
+	hlTrans[3].x = absoluteTrackingMatrix[3].z * VR_TO_HL.z - translate.x;
+	hlTrans[3].y = absoluteTrackingMatrix[3].x * VR_TO_HL.x - translate.y;
+	hlTrans[3].z = -absoluteTrackingMatrix[3].y * VR_TO_HL.y - translate.z;
 	hlTrans[3].w = 1.0f;
 
 	return hlSpaceMat * hlTrans;
@@ -566,9 +566,9 @@ glm::vec3 VRHelper::GetDeviceHLSpaceTranslation(VRTrackedDeviceIndex deviceIndex
 	const glm::vec3& vrTranslation = GetCenteredRawDeviceTransform(deviceIndex)[3];
 	Vector playerOrg = GetPlayerViewOrg();
 	glm::vec3 hlTrans;
-	hlTrans.x = -vrTranslation.z * VR_TO_HL.z * 10.0f + playerOrg.x;
-	hlTrans.y = -vrTranslation.x * VR_TO_HL.x * 10.0f + playerOrg.y;
-	hlTrans.z = vrTranslation.y * VR_TO_HL.y * 10.0f + playerOrg.z;
+	hlTrans.x = -vrTranslation.z * VR_TO_HL.z + playerOrg.x;
+	hlTrans.y = -vrTranslation.x * VR_TO_HL.x + playerOrg.y;
+	hlTrans.z = vrTranslation.y * VR_TO_HL.y + playerOrg.z;
 
 	return hlTrans;
 }
@@ -603,7 +603,7 @@ void VRHelper::Recenter()
 	glm::decompose(hmdTransform, scale, rot, centerTranslation, skew, perspective);
 
 	cl_entity_t *localPlayer = gEngfuncs.GetLocalPlayer();
-	centerTranslation.y += (localPlayer->curstate.mins.z * HL_TO_VR.z * 0.1f);
+	centerTranslation.y += (localPlayer->curstate.mins.z * HL_TO_VR.z);
 	centerTransform = glm::translate(centerTransform, centerTranslation);
 	invertCenterTransform = glm::inverse(centerTransform);
 }
