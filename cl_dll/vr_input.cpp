@@ -249,25 +249,32 @@ void VRInput::HandleButtonPressLeft(VRButton button, VRControllerState controlle
 		{
 			const VRControllerAxis& touchPadAxis = controllerState.axis[ 0 ];
 
-			if (touchPadAxis.x <= -0.5f) // Touchpad left
+			if (buttonDown)
 			{
-				// TODO : Rotate Left snap
+				if (touchPadAxis.x <= -0.5f) // Touchpad left
+				{
+					// TODO : Rotate Left snap
+				}
+				else if (touchPadAxis.x >= 0.5f) // Touchpad right
+				{
+					// TODO : Rotate Right snap
+				}
+				else if (touchPadAxis.y <= -0.5f) // Touchpad down
+				{
+					// Run forward
+					ClientCmd("cl_forwardspeed 400");
+					ClientCmd("+forward");
+				}
+				else if (touchPadAxis.y >= 0.5f) // Touchpad up
+				{
+					// Walk forward
+					ClientCmd("cl_forwardspeed 175");
+					ClientCmd("+forward");
+				}
 			}
-			else if (touchPadAxis.x >= 0.5f) // Touchpad right
+			else
 			{
-				// TODO : Rotate Right snap
-			}
-			else if (touchPadAxis.y <= -0.5f) // Touchpad down
-			{
-				// Run forward
-				ClientCmd("cl_forwardspeed 400");
-				buttonDown ? ClientCmd("+forward") : ClientCmd("-forward");
-			}
-			else if ( touchPadAxis.y >= 0.5f ) // Touchpad up
-			{
-				// Walk forward
-				ClientCmd("cl_forwardspeed 175");
-				buttonDown ? ClientCmd("+forward") : ClientCmd("-forward");
+				ClientCmd("-forward");
 			}
 		}
 		break;
@@ -306,13 +313,13 @@ void VRInput::HandleButtonPressRight(VRButton button, VRControllerState controll
 		{
 			const VRControllerAxis& touchPadAxis = controllerState.axis[ 0 ];
 
-			if (touchPadAxis.x <= -0.5f && !buttonDown) // Touchpad left
+			if (touchPadAxis.x <= -0.5f && buttonDown) // Touchpad left
 			{
 				gHUD.m_Ammo.UserCmd_PrevWeapon();
 				gHUD.m_iKeyBits |= IN_ATTACK;
 				gHUD.m_Ammo.Think();
 			}
-			else if (touchPadAxis.x >= 0.5f && !buttonDown) // Touchpad right
+			else if (touchPadAxis.x >= 0.5f && buttonDown) // Touchpad right
 			{
 				gHUD.m_Ammo.UserCmd_NextWeapon();
 				gHUD.m_iKeyBits |= IN_ATTACK;

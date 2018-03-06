@@ -66,7 +66,7 @@ void VRHelper::Init()
 	//Register Helper convars
 	vr_weapontilt = gEngfuncs.pfnRegisterVariable("vr_weapontilt", "-25", FCVAR_ARCHIVE);
 	vr_roomcrouch = gEngfuncs.pfnRegisterVariable("vr_roomcrouch", "1", FCVAR_ARCHIVE);
-	vr_systemType = gEngfuncs.pfnRegisterVariable("vr_systemType", "0", FCVAR_ARCHIVE);
+	vr_systemType = gEngfuncs.pfnRegisterVariable("vr_systemType", "1", FCVAR_ARCHIVE);
 	vr_showPlayer = gEngfuncs.pfnRegisterVariable("vr_showPlayer", "0", 0);
 	vr_renderEyeInWindow = gEngfuncs.pfnRegisterVariable("vr_renderEyeInWindow", "0", 0); // 0 = Classic preview - 1 = Left eye - 2 = Right eye
 
