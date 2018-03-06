@@ -340,8 +340,8 @@ bool VRHelper::UpdatePositions()
 			hlSpaceVRTransforms.headsetLeftEyeProjection = GetHMDMatrixProjectionEye(VREye::Left);
 			hlSpaceVRTransforms.headsetRightEyeProjection = GetHMDMatrixProjectionEye(VREye::Right);
 
-			hlSpaceVRTransforms.headsetLeftEyeModelView = TransformVRSpaceToHLSpace(vrSystem->GetEyeToHeadTransform(VREye::Left) * headsetTransform, playerOrigin);
-			hlSpaceVRTransforms.headsetRightEyeModelView = TransformVRSpaceToHLSpace(vrSystem->GetEyeToHeadTransform(VREye::Right) * headsetTransform, playerOrigin);
+			hlSpaceVRTransforms.headsetLeftEyeModelView = TransformVRSpaceToHLSpace(headsetTransform * vrSystem->GetEyeToHeadTransform(VREye::Left), playerOrigin);
+			hlSpaceVRTransforms.headsetRightEyeModelView = TransformVRSpaceToHLSpace(headsetTransform * vrSystem->GetEyeToHeadTransform(VREye::Right), playerOrigin);
 
 			UpdateGunPosition();
 
