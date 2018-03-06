@@ -17,34 +17,34 @@ VRInput::~VRInput()
 
 }
 
-void VRInput::HandleButtonPress(VRButton button, VRControllerState controllerState, bool leftOrRight, bool downOrUp)
+void VRInput::HandleButtonPress(VRButton button, VRControllerState controllerState, bool isLeftController, bool buttonDown)
 {
 	if (vr_control_scheme->value == 0.0f)
 	{
-		HandleButtonPressOld(button, controllerState, leftOrRight, downOrUp);
+		HandleButtonPressOld(button, controllerState, isLeftController, buttonDown);
 	}
 	else if(vr_control_scheme->value == 1.0f)
 	{
-		HandleButtonPressNew(button, controllerState, leftOrRight, downOrUp);
+		HandleButtonPressNew(button, controllerState, isLeftController, buttonDown);
 	}
 }
 
-void VRInput::HandleTrackpad(VRButton button, VRControllerState controllerState, bool leftOrRight, bool downOrUp)
+void VRInput::HandleTrackpad(VRButton button, VRControllerState controllerState, bool isLeftController, bool buttonDown)
 {
 	if ( vr_control_scheme->value == 0.0f )
 	{
-		HandleTrackpadOld(button, controllerState, leftOrRight, downOrUp);
+		HandleTrackpadOld(button, controllerState, isLeftController, buttonDown);
 	} else if ( vr_control_scheme->value == 1.0f )
 	{
-		HandleTrackpadNew(button, controllerState, leftOrRight, downOrUp);
+		HandleTrackpadNew(button, controllerState, isLeftController, buttonDown);
 	}
 }
 
 //////////////////////////////////////////////////////////////////////////
 
-void VRInput::HandleButtonPressOld(VRButton button, VRControllerState controllerState, bool leftOrRight, bool downOrUp)
+void VRInput::HandleButtonPressOld(VRButton button, VRControllerState controllerState, bool isLeftController, bool buttonDown)
 {
-	if (leftOrRight)
+	if (isLeftController)
 	{				// Left controller button presses start here.
 		switch (button)
 		{
@@ -55,27 +55,27 @@ void VRInput::HandleButtonPressOld(VRButton button, VRControllerState controller
 			break;
 			case VRButton::SteamVR_Trigger:
 			{
-				downOrUp ? ClientCmd("+use") : ClientCmd("-use");
+				buttonDown ? ClientCmd("+use") : ClientCmd("-use");
 			}
 			break;
 			case VRButton::SteamVR_Touchpad:
 			{
 				if (vr_control_teleport->value == 1.f)
 				{
-					if (downOrUp && isTeleActive) {
+					if (buttonDown && isTeleActive) {
 						ServerCmd("vrtele 0");
 						isTeleActive = false;
 					}
 					} else
-					downOrUp ? ClientCmd("cl_forwardspeed 400") : ClientCmd("cl_forwardspeed 175");
-					downOrUp ? ClientCmd("cl_backwardspeed 400") : ClientCmd("cl_backwardspeed 175");
-					downOrUp ? ClientCmd("cl_sidespeed 400") : ClientCmd("cl_sidespeed 175");
+					buttonDown ? ClientCmd("cl_forwardspeed 400") : ClientCmd("cl_forwardspeed 175");
+					buttonDown ? ClientCmd("cl_backwardspeed 400") : ClientCmd("cl_backwardspeed 175");
+					buttonDown ? ClientCmd("cl_sidespeed 400") : ClientCmd("cl_sidespeed 175");
 			}
 			break;
 			case VRButton::Grip:
 			{
 			
-				downOrUp ? ClientCmd("Impulse 100"): ClientCmd("Impulse");
+				buttonDown ? ClientCmd("Impulse 100"): ClientCmd("Impulse");
 				//downOrUp ? ServerCmd("vr_grabweapon 1") : ServerCmd("vr_grabweapon 0");
 
 				//I decided not to atempt this now. A quick and dirty way to make two handed
@@ -91,17 +91,17 @@ void VRInput::HandleButtonPressOld(VRButton button, VRControllerState controller
 		{
 			case VRButton::ApplicationMenu:
 			{
-				downOrUp ? ClientCmd("+jump") : ClientCmd("-jump");
+				buttonDown ? ClientCmd("+jump") : ClientCmd("-jump");
 			}
 			break;
 			case VRButton::Grip:
 			{
-				downOrUp ? ClientCmd("+attack2") : ClientCmd("-attack2");
+				buttonDown ? ClientCmd("+attack2") : ClientCmd("-attack2");
 			}
 			break;
 			case VRButton::SteamVR_Trigger:
 			{
-				downOrUp ? ClientCmd("+attack") : ClientCmd("-attack");
+				buttonDown ? ClientCmd("+attack") : ClientCmd("-attack");
 			}
 			break;
 			case VRButton::SteamVR_Touchpad:
@@ -109,19 +109,19 @@ void VRInput::HandleButtonPressOld(VRButton button, VRControllerState controller
 				//ServerCmd(downOrUp ? "vrtele 1" : "vrtele 0");
 				const VRControllerAxis& touchPadAxis = controllerState.axis[0];
 
-				if (touchPadAxis.x < -0.5f && !downOrUp)
+				if (touchPadAxis.x < -0.5f && !buttonDown)
 				{
 					gHUD.m_Ammo.UserCmd_NextWeapon();
 					gHUD.m_iKeyBits |= IN_ATTACK;
 					gHUD.m_Ammo.Think();
-					} else if ( touchPadAxis.x > 0.5f && !downOrUp )
+					} else if ( touchPadAxis.x > 0.5f && !buttonDown )
 				{
 					gHUD.m_Ammo.UserCmd_PrevWeapon();
 					gHUD.m_iKeyBits |= IN_ATTACK;
 					gHUD.m_Ammo.Think();
 				}
 
-				if (touchPadAxis.y < -0.5f && downOrUp)
+				if (touchPadAxis.y < -0.5f && buttonDown)
 				{
 					ClientCmd("+reload");				
 					} else
@@ -129,7 +129,7 @@ void VRInput::HandleButtonPressOld(VRButton button, VRControllerState controller
 					ClientCmd("-reload");				
 				}
 
-				if (touchPadAxis.y > 0.5f && downOrUp)
+				if (touchPadAxis.y > 0.5f && buttonDown)
 				{
 					ServerCmd("vrtele 1");
 					} else
@@ -143,20 +143,20 @@ void VRInput::HandleButtonPressOld(VRButton button, VRControllerState controller
 	}
 }
 
-void VRInput::HandleTrackpadOld(VRButton button, VRControllerState controllerState, bool leftOrRight, bool downOrUp)
+void VRInput::HandleTrackpadOld(VRButton button, VRControllerState controllerState, bool isLeftController, bool buttonDown)
 {
 	const VRControllerAxis& touchPadAxis = controllerState.axis[0];
-	downOrUp = (
+	buttonDown = (
 		touchPadAxis.x < -vr_control_deadzone->value ||
 		touchPadAxis.x > vr_control_deadzone->value ||
 		touchPadAxis.y < -vr_control_deadzone->value ||
 		touchPadAxis.y > vr_control_deadzone->value
 		);
 
-	if (leftOrRight && vr_control_teleport->value != 1.f)
+	if (isLeftController && vr_control_teleport->value != 1.f)
 	{
 		if (vr_control_alwaysforward->value == 1.f)
-			downOrUp ? ClientCmd("+forward") : ClientCmd("-forward");
+			buttonDown ? ClientCmd("+forward") : ClientCmd("-forward");
 		else
 		{
 			if (touchPadAxis.x < -vr_control_deadzone->value)
@@ -191,13 +191,13 @@ void VRInput::HandleTrackpadOld(VRButton button, VRControllerState controllerSta
 				ClientCmd("-back");
 			}
 		}
-	} else if ( leftOrRight && vr_control_teleport->value == 1.f )
+	} else if ( isLeftController && vr_control_teleport->value == 1.f )
 	{
-		if (downOrUp && !isTeleActive)
+		if (buttonDown && !isTeleActive)
 		{
 			ServerCmd("vrtele 1");
 			isTeleActive = true;
-		} else if ( !downOrUp && isTeleActive )
+		} else if ( !buttonDown && isTeleActive )
 		{
 			ServerCmd("vrtele 2");
 			isTeleActive = false;
@@ -205,24 +205,24 @@ void VRInput::HandleTrackpadOld(VRButton button, VRControllerState controllerSta
 	}
 }
 
-void VRInput::HandleButtonPressNew(VRButton button, VRControllerState controllerState, bool leftOrRight, bool downOrUp)
+void VRInput::HandleButtonPressNew(VRButton button, VRControllerState controllerState, bool isLeftController, bool buttonDown)
 {
-	if (leftOrRight)
+	if (isLeftController)
 	{
-		HandleButtonPressLeft(button, controllerState, downOrUp);
+		HandleButtonPressLeft(button, controllerState, buttonDown);
 	}
 	else
 	{
-		HandleButtonPressRight(button, controllerState, downOrUp);
+		HandleButtonPressRight(button, controllerState, buttonDown);
 	}
 }
 
-void VRInput::HandleTrackpadNew(VRButton button, VRControllerState controllerState, bool leftOrRight, bool downOrUp)
+void VRInput::HandleTrackpadNew(VRButton button, VRControllerState controllerState, bool isLeftController, bool buttonDown)
 {
 	// Trackpad isn't used (yet) in the new control scheme
 }
 
-void VRInput::HandleButtonPressLeft(VRButton button, VRControllerState controllerState, bool downOrUp)
+void VRInput::HandleButtonPressLeft(VRButton button, VRControllerState controllerState, bool buttonDown)
 {
 	// Control scheme is as follow:
 	// Trackpad up : Walk forward
@@ -242,7 +242,7 @@ void VRInput::HandleButtonPressLeft(VRButton button, VRControllerState controlle
 		break;
 		case VRButton::SteamVR_Trigger:
 		{
-			downOrUp ? ClientCmd("+use") : ClientCmd("-use");
+			buttonDown ? ClientCmd("+use") : ClientCmd("-use");
 		}
 		break;
 		case VRButton::SteamVR_Touchpad:
@@ -261,25 +261,25 @@ void VRInput::HandleButtonPressLeft(VRButton button, VRControllerState controlle
 			{
 				// Run forward
 				ClientCmd("cl_forwardspeed 400");
-				downOrUp ? ClientCmd("+forward") : ClientCmd("-forward");
+				buttonDown ? ClientCmd("+forward") : ClientCmd("-forward");
 			}
 			else if ( touchPadAxis.y >= 0.5f ) // Touchpad up
 			{
 				// Walk forward
 				ClientCmd("cl_forwardspeed 175");
-				downOrUp ? ClientCmd("+forward") : ClientCmd("-forward");
+				buttonDown ? ClientCmd("+forward") : ClientCmd("-forward");
 			}
 		}
 		break;
 		case VRButton::ApplicationMenu:
 		{
-			downOrUp ? ClientCmd("Impulse 100") : ClientCmd("Impulse");
+			buttonDown ? ClientCmd("Impulse 100") : ClientCmd("Impulse");
 		}
 		break;
 	}
 }
 
-void VRInput::HandleButtonPressRight(VRButton button, VRControllerState controllerState, bool downOrUp)
+void VRInput::HandleButtonPressRight(VRButton button, VRControllerState controllerState, bool buttonDown)
 {
 	// Control scheme is as follow :
 	// Trackpad up : Duck
@@ -294,25 +294,25 @@ void VRInput::HandleButtonPressRight(VRButton button, VRControllerState controll
 	{
 		case VRButton::Grip:
 		{
-			downOrUp ? ClientCmd("+attack2") : ClientCmd("-attack2");
+			buttonDown ? ClientCmd("+attack2") : ClientCmd("-attack2");
 		}
 		break;
 		case VRButton::SteamVR_Trigger:
 		{
-			downOrUp ? ClientCmd("+attack") : ClientCmd("-attack");
+			buttonDown ? ClientCmd("+attack") : ClientCmd("-attack");
 		}
 		break;
 		case VRButton::SteamVR_Touchpad:
 		{
 			const VRControllerAxis& touchPadAxis = controllerState.axis[ 0 ];
 
-			if (touchPadAxis.x <= -0.5f && !downOrUp) // Touchpad left
+			if (touchPadAxis.x <= -0.5f && !buttonDown) // Touchpad left
 			{
 				gHUD.m_Ammo.UserCmd_PrevWeapon();
 				gHUD.m_iKeyBits |= IN_ATTACK;
 				gHUD.m_Ammo.Think();
 			}
-			else if (touchPadAxis.x >= 0.5f && !downOrUp) // Touchpad right
+			else if (touchPadAxis.x >= 0.5f && !buttonDown) // Touchpad right
 			{
 				gHUD.m_Ammo.UserCmd_NextWeapon();
 				gHUD.m_iKeyBits |= IN_ATTACK;
@@ -320,28 +320,28 @@ void VRInput::HandleButtonPressRight(VRButton button, VRControllerState controll
 			}
 			else if (touchPadAxis.y <= -0.5f) // Touchpad down
 			{
-				downOrUp ? ClientCmd("+reload") : ClientCmd("-reload");
+				buttonDown ? ClientCmd("+reload") : ClientCmd("-reload");
 			}
 			else if ( touchPadAxis.y >= 0.5f ) // Touchpad up
 			{
-				downOrUp ? ClientCmd("+duck") : ClientCmd("-duck");
+				buttonDown ? ClientCmd("+duck") : ClientCmd("-duck");
 			}
 		}
 		break;
 		case VRButton::ApplicationMenu:
 		{
-			downOrUp ? ClientCmd("+jump") : ClientCmd("-jump");
+			buttonDown ? ClientCmd("+jump") : ClientCmd("-jump");
 		}
 		break;
 	}
 }
 
-void VRInput::HandleTrackpadLeft(VRButton button, VRControllerState controllerState, bool downOrUp)
+void VRInput::HandleTrackpadLeft(VRButton button, VRControllerState controllerState, bool buttonDown)
 {
 	// Trackpad isn't used (yet) in the new control scheme
 }
 
-void VRInput::HandleTrackpadRight(VRButton button, VRControllerState controllerState, bool downOrUp)
+void VRInput::HandleTrackpadRight(VRButton button, VRControllerState controllerState, bool buttonDown)
 {
 	// Trackpad isn't used (yet) in the new control scheme
 }

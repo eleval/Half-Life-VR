@@ -15,19 +15,19 @@ public:
 	cvar_t	*vr_control_scheme;
 
 
-	void HandleButtonPress(VRButton button, VRControllerState controllerState, bool leftOrRight, bool downOrUp);
-	void HandleTrackpad(VRButton button, VRControllerState controllerState, bool leftOrRight, bool downOrUp);
+	void HandleButtonPress(VRButton button, VRControllerState controllerState, bool isLeftController, bool buttonDown);
+	void HandleTrackpad(VRButton button, VRControllerState controllerState, bool isLeftController, bool buttonDown);
 
-	void HandleButtonPressOld(VRButton button, VRControllerState controllerState, bool leftOrRight, bool downOrUp);
-	void HandleTrackpadOld(VRButton button, VRControllerState controllerState, bool leftOrRight, bool downOrUp);
+	void HandleButtonPressOld(VRButton button, VRControllerState controllerState, bool isLeftController, bool buttonDown);
+	void HandleTrackpadOld(VRButton button, VRControllerState controllerState, bool isLeftController, bool buttonDown);
 
-	void HandleButtonPressNew(VRButton button, VRControllerState controllerState, bool leftOrRight, bool downOrUp);
-	void HandleTrackpadNew(VRButton button, VRControllerState controllerState, bool leftOrRight, bool downOrUp);
+	void HandleButtonPressNew(VRButton button, VRControllerState controllerState, bool isLeftController, bool buttonDown);
+	void HandleTrackpadNew(VRButton button, VRControllerState controllerState, bool isLeftController, bool buttonDown);
 
-	void HandleButtonPressLeft(VRButton button, VRControllerState controllerState, bool downOrUp);
-	void HandleButtonPressRight(VRButton button, VRControllerState controllerState, bool downOrUp);
-	void HandleTrackpadLeft(VRButton button, VRControllerState controllerState, bool downOrUp);
-	void HandleTrackpadRight(VRButton button, VRControllerState controllerState, bool downOrUp);
+	void HandleButtonPressLeft(VRButton button, VRControllerState controllerState, bool buttonDown);
+	void HandleButtonPressRight(VRButton button, VRControllerState controllerState, bool buttonDown);
+	void HandleTrackpadLeft(VRButton button, VRControllerState controllerState, bool buttonDown);
+	void HandleTrackpadRight(VRButton button, VRControllerState controllerState, bool buttonDown);
 private:
 	bool isTeleActive;
 };
