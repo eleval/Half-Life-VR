@@ -464,28 +464,21 @@ void VRHelper::UpdateGunPosition()
 
 		if (controllerIndex > 0 && controllerIndex != VRTrackedDeviceIndexInvalid && rawTrackedDevicePoses[controllerIndex].isValid)
 		{
-			glm::mat4 controllerAbsoluteTrackingMatrix = GetCenteredRawDeviceTransform(controllerIndex);
+			const glm::mat4 controllerTransform = GetDeviceHLSpaceTransform(controllerIndex);
+			const glm::vec3 controllerPosition = GetDeviceHLSpaceTranslation(controllerIndex);
+			const glm::vec3 controllerVelocity = GetDeviceHLSpaceVelocity(controllerIndex);
 
-			glm::vec4 originInVRSpace = controllerAbsoluteTrackingMatrix * glm::vec4(0, 0, 0, 1);
-			Vector originInRelativeHLSpace(originInVRSpace.x * VR_TO_HL.x * 10, -originInVRSpace.z * VR_TO_HL.z * 10, originInVRSpace.y * VR_TO_HL.y * 10);
+			const Vector controllerPositionHL(controllerPosition.x, controllerPosition.y, controllerPosition.z);
+			VectorCopy(controllerPositionHL, viewent->origin);
+			VectorCopy(controllerPositionHL, viewent->curstate.origin);
+			VectorCopy(controllerPositionHL, viewent->latched.prevorigin);
 
-			cl_entity_t *localPlayer = gEngfuncs.GetLocalPlayer();
-			Vector originInHLSpace = localPlayer->curstate.origin + originInRelativeHLSpace;
-
-			VectorCopy(originInHLSpace, viewent->origin);
-			VectorCopy(originInHLSpace, viewent->curstate.origin);
-			VectorCopy(originInHLSpace, viewent->latched.prevorigin);
-
-
-			viewent->angles = GetHLAnglesFromVRMatrix(controllerAbsoluteTrackingMatrix);
-			viewent->angles.x += vr_weapontilt->value;
+			viewent->angles = GetAnglesFromMatrix(controllerTransform);
+			viewent->angles.x = 360.0f - viewent->angles.x;
 			VectorCopy(viewent->angles, viewent->curstate.angles);
 			VectorCopy(viewent->angles, viewent->latched.prevangles);
 
-
-			Vector velocityInVRSpace = Vector(rawTrackedDevicePoses[controllerIndex].velocity.x, rawTrackedDevicePoses[controllerIndex].velocity.y, rawTrackedDevicePoses[controllerIndex].velocity.z);
-			Vector velocityInHLSpace(velocityInVRSpace.x * VR_TO_HL.x * 10, -velocityInVRSpace.z * VR_TO_HL.z * 10, velocityInVRSpace.y * VR_TO_HL.y * 10);
-			viewent->curstate.velocity = velocityInHLSpace;
+			viewent->curstate.velocity = Vector(controllerVelocity.x, controllerVelocity.y, controllerVelocity.z);
 		}
 		else
 		{
@@ -571,6 +564,17 @@ glm::vec3 VRHelper::GetDeviceHLSpaceTranslation(VRTrackedDeviceIndex deviceIndex
 	hlTrans.z = vrTranslation.y * VR_TO_HL.y + playerOrg.z;
 
 	return hlTrans;
+}
+
+glm::vec3 VRHelper::GetDeviceHLSpaceVelocity(VRTrackedDeviceIndex deviceIndex)
+{
+	const glm::vec3& vrVelocity = rawTrackedDevicePoses[deviceIndex].velocity;
+	glm::vec3 hlVelocity;
+	hlVelocity.x = -vrVelocity.z * VR_TO_HL.z;
+	hlVelocity.y = -vrVelocity.x * VR_TO_HL.x;
+	hlVelocity.z = vrVelocity.y * VR_TO_HL.y;
+
+	return hlVelocity;
 }
 
 void VRHelper::DecomposeHLSpaceTransform(const glm::mat4& mat, glm::vec3& outForward, glm::vec3& outLeft, glm::vec3& outUp)

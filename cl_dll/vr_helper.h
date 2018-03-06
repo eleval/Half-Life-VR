@@ -41,6 +41,7 @@ public:
 	const glm::mat4& GetDeviceAbsoluteTransform(VRTrackedDeviceIndex deviceIndex);
 	const glm::mat4& GetDeviceHLSpaceTransform(VRTrackedDeviceIndex deviceIndex);
 	glm::vec3 GetDeviceHLSpaceTranslation(VRTrackedDeviceIndex deviceIndex);
+	glm::vec3 GetDeviceHLSpaceVelocity(VRTrackedDeviceIndex deviceIndex);
 
 	void DecomposeHLSpaceTransform(const glm::mat4& mat, glm::vec3& outForward, glm::vec3& outLeft, glm::vec3& outUp);
 
