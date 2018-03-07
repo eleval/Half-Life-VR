@@ -85,13 +85,54 @@ VRButton ConvertSteamVRButtonToVRButton(uint32_t button)
 		case vr::k_EButton_Axis2:
 			return VRButton::Axis2;
 		case vr::k_EButton_Axis3:
-			return VRButton::Axis4;
+			return VRButton::Axis3;
 		case vr::k_EButton_Axis4:
 			return VRButton::Axis4;
 
-		default:
 		case vr::k_EButton_Max:
+		default:
 			return VRButton::Max;
+	}
+}
+
+vr::EVRButtonId ConvertVRButtonToSteamVRButton(VRButton button)
+{
+	switch (button)
+	{
+		case VRButton::System:
+			return vr::k_EButton_System;
+		case VRButton::ApplicationMenu:
+			return vr::k_EButton_ApplicationMenu;
+		case VRButton::Grip:
+			return vr::k_EButton_Grip;
+		case VRButton::DPad_Left:
+			return vr::k_EButton_DPad_Left;
+		case VRButton::DPad_Up:
+			return vr::k_EButton_DPad_Up;
+		case VRButton::DPad_Right:
+			return vr::k_EButton_DPad_Right;
+		case VRButton::DPad_Down:
+			return vr::k_EButton_DPad_Down;
+		case VRButton::A:
+			return vr::k_EButton_A;
+
+		case VRButton::ProximitySensor:
+			return vr::k_EButton_ProximitySensor;
+
+		case VRButton::Axis0:
+			return vr::k_EButton_Axis0;
+		case VRButton::Axis1:
+			return vr::k_EButton_Axis1;
+		case VRButton::Axis2:
+			return vr::k_EButton_Axis2;
+		case VRButton::Axis3:
+			return vr::k_EButton_Axis3;
+		case VRButton::Axis4:
+			return vr::k_EButton_Axis4;
+
+		case VRButton::Max:
+		default:
+			return vr::k_EButton_Max;
 	}
 }
 

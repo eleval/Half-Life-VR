@@ -26,7 +26,7 @@ public:
 
 	void Init();
 
-	void PollEvents();
+	void Update();
 	bool UpdatePositions();
 	void SubmitImages();
 	void PrepareVRScene(VREye eEye, struct ref_params_s* pparams);
@@ -68,6 +68,9 @@ private:
 
 	HLSpaceVRTransforms hlSpaceVRTransforms;
 	std::vector<VRTrackedDevicePose> rawTrackedDevicePoses;
+
+	VRControllerState currLeftControllerState;
+	VRControllerState currRightControllerState;
 
 	glm::mat4 centerTransform;
 	glm::mat4 invertCenterTransform;

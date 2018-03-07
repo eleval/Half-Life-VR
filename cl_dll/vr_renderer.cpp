@@ -76,7 +76,7 @@ void VRRenderer::Frame(double time)
 		isInMenu = true;
 	}
 
-	gVRHelper.PollEvents();
+	gVRHelper.Update();
 }
 
 void VRRenderer::CalcRefdef(struct ref_params_s* pparams)

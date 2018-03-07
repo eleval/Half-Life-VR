@@ -36,6 +36,12 @@ inline VRTrackedControllerRole operator++(VRTrackedControllerRole &c)
 
 struct VRTrackedDevicePose
 {
+	VRTrackedDevicePose() :
+		transform(glm::mat4(1.0f)),
+		velocity(glm::vec3(0.0f, 0.0f, 0.0f)),
+		isValid(false)
+	{
+	}
 	glm::mat4 transform;
 	glm::vec3 velocity;
 	bool isValid;
@@ -117,6 +123,17 @@ static const uint32_t VRControllerStateAxisCount = 5;
 
 struct VRControllerState
 {
+	VRControllerState() :
+		packetNum(0),
+		buttonPressed(0),
+		buttonTouched(0)
+	{
+		for (int i = 0; i < VRControllerStateAxisCount; ++i)
+		{
+			axis[i].x = 0.0f;
+			axis[i].y = 0.0f;
+		}
+	}
 	// If packet num matches that on your prior call, then the controller state hasn't been changed since 
 	// your last call and there is no need to process it
 	uint32_t packetNum;

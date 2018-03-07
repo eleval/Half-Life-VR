@@ -66,7 +66,7 @@ void VRHelper::Init()
 	//Register Helper convars
 	vr_weapontilt = gEngfuncs.pfnRegisterVariable("vr_weapontilt", "-25", FCVAR_ARCHIVE);
 	vr_roomcrouch = gEngfuncs.pfnRegisterVariable("vr_roomcrouch", "1", FCVAR_ARCHIVE);
-	vr_systemType = gEngfuncs.pfnRegisterVariable("vr_systemType", "1", FCVAR_ARCHIVE);
+	vr_systemType = gEngfuncs.pfnRegisterVariable("vr_systemType", "0", FCVAR_ARCHIVE);
 	vr_showPlayer = gEngfuncs.pfnRegisterVariable("vr_showPlayer", "0", 0);
 	vr_renderEyeInWindow = gEngfuncs.pfnRegisterVariable("vr_renderEyeInWindow", "0", 0); // 0 = Classic preview - 1 = Left eye - 2 = Right eye
 
@@ -269,7 +269,7 @@ Vector GetPositionInHLSpaceFromAbsoluteTrackingMatrix(const glm::mat4 & absolute
 	return localPlayer->curstate.origin + originInRelativeHLSpace;
 }
 
-void VRHelper::PollEvents()
+void VRHelper::Update()
 {
 	if (vrSystem != nullptr)
 	{
@@ -291,13 +291,13 @@ void VRHelper::PollEvents()
 			case VREventType::ButtonPress:
 			case VREventType::ButtonUnpress:
 			{
-				VRTrackedControllerRole controllerRole = vrSystem->GetControllerRoleForTrackedDeviceIndex(vrEvent.trackedDeviceIndex);
+				/*VRTrackedControllerRole controllerRole = vrSystem->GetControllerRoleForTrackedDeviceIndex(vrEvent.trackedDeviceIndex);
 				if (controllerRole != VRTrackedControllerRole::Invalid)
 				{
 					VRControllerState controllerState;
 					vrSystem->GetControllerState(vrEvent.trackedDeviceIndex, controllerState);
 					g_vrInput.HandleButtonPress(vrEvent.data.controller.button, controllerState, controllerRole == VRTrackedControllerRole::LeftHand, vrEvent.eventType == VREventType::ButtonPress);
-				}
+				}*/
 			}
 			break;
 			case VREventType::ButtonTouch:
@@ -309,8 +309,21 @@ void VRHelper::PollEvents()
 
 	for (VRTrackedControllerRole controllerRole = VRTrackedControllerRole::LeftHand; controllerRole <= VRTrackedControllerRole::RightHand; ++controllerRole)
 	{
+		VRControllerState& prevControllerState = controllerRole == VRTrackedControllerRole::LeftHand ? currLeftControllerState : currRightControllerState;
 		VRControllerState controllerState;
 		vrSystem->GetControllerState(vrSystem->GetTrackedDeviceIndexForControllerRole(controllerRole), controllerState);
+
+		for (uint64_t i = 0; i < static_cast<uint64_t>(VRButton::Max); ++i)
+		{
+			const uint64_t buttonMask = 1ull << i;
+			if ((prevControllerState.buttonPressed & buttonMask ) != (controllerState.buttonPressed & buttonMask))
+			{
+				g_vrInput.HandleButtonPress(static_cast<VRButton>(i), controllerState, controllerRole == VRTrackedControllerRole::LeftHand, (controllerState.buttonPressed & buttonMask) == buttonMask);
+			}
+		}
+
+		prevControllerState = controllerState;
+
 		g_vrInput.HandleTrackpad(VRButton::SteamVR_Touchpad, controllerState, controllerRole == VRTrackedControllerRole::LeftHand, false);
 	}
 }
@@ -411,19 +424,27 @@ void VRHelper::GetViewAngles(float * angles)
 
 void VRHelper::GetWalkAngles(float * angles)
 {
-	Vector walkAngles;
+	Vector walkAngles(0.0f, 0.0f, 0.0f);
 
 	if (g_vrInput.vr_control_hand->value == 0.0f)
 	{
-		walkAngles = GetAnglesFromMatrix(GetDeviceHLSpaceTransform(0));
+		walkAngles = GetAnglesFromMatrix(GetDeviceHLSpaceTransform(VRTrackedDeviceIndex_Hmd));
 	}
 	else if (g_vrInput.vr_control_hand->value == 1.0f)
 	{
-		walkAngles = GetAnglesFromMatrix(GetDeviceHLSpaceTransform(1));
+		const VRTrackedDeviceIndex controllerIndex = vrSystem->GetTrackedDeviceIndexForControllerRole(VRTrackedControllerRole::LeftHand);
+		if (controllerIndex > 0 && controllerIndex <= VRMaxTrackedDeviceCount)
+		{
+			walkAngles = GetAnglesFromMatrix(GetDeviceHLSpaceTransform(controllerIndex));
+		}
 	}
 	else if (g_vrInput.vr_control_hand->value == 2.0f)
 	{
-		walkAngles = GetAnglesFromMatrix(GetDeviceHLSpaceTransform(2));
+		const VRTrackedDeviceIndex controllerIndex = vrSystem->GetTrackedDeviceIndexForControllerRole(VRTrackedControllerRole::RightHand);
+		if (controllerIndex > 0 && controllerIndex <= VRMaxTrackedDeviceCount)
+		{
+			walkAngles = GetAnglesFromMatrix(GetDeviceHLSpaceTransform(controllerIndex));
+		}
 	}
 
 	walkAngles.CopyToArray(angles);
@@ -499,7 +520,7 @@ void VRHelper::SendPositionUpdateToServer()
 	bool isLeftControllerValid = leftControllerIndex > 0 && leftControllerIndex != VRTrackedDeviceIndexInvalid && rawTrackedDevicePoses[leftControllerIndex].isValid;
 
 	VRTrackedDeviceIndex rightControllerIndex = vrSystem->GetTrackedDeviceIndexForControllerRole(VRTrackedControllerRole::RightHand);
-	bool isRightControllerValid = leftControllerIndex > 0 && leftControllerIndex != VRTrackedDeviceIndexInvalid && rawTrackedDevicePoses[leftControllerIndex].isValid;
+	bool isRightControllerValid = rightControllerIndex > 0 && rightControllerIndex != VRTrackedDeviceIndexInvalid && rawTrackedDevicePoses[rightControllerIndex].isValid;
 
 	Vector leftControllerOffset(0, 0, 0);
 	Vector leftControllerAngles(0, 0, 0);
