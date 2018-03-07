@@ -4520,6 +4520,10 @@ LINK_ENTITY_TO_CLASS( info_intermission, CInfoIntermission );
 extern  "C"  playermove_t *pmove;
 void CBasePlayer::UpdateVRRelatedPositions(const Vector & vr_hmdOffset, const Vector & leftControllerOffset, const Vector & leftControllerAngles, const Vector & weaponOffset, const Vector & weaponAngles, const Vector & weaponVelocity, bool isLeftControllerValid, bool isRightControllerValid, bool buttonCrouch)
 {
+	vr_weaponOffset = weaponOffset;
+	vr_weaponAngles = weaponAngles;
+	vr_weaponVelocity = weaponVelocity;
+
 	return; // Disabled for now
 
 	float flDuckHeightDelta = VEC_HULL_MIN.z - VEC_DUCK_HULL_MIN.z;
@@ -4635,10 +4639,6 @@ void CBasePlayer::UpdateVRRelatedPositions(const Vector & vr_hmdOffset, const Ve
 		if (pmove != nullptr) Vector(pev->maxs).CopyToArray(pmove->player_maxs[0]);
 	}
 	UTIL_SetSize(pev, pev->mins, pev->maxs);
-
-	vr_weaponOffset = weaponOffset;
-	vr_weaponAngles = weaponAngles;
-	vr_weaponVelocity = weaponVelocity;
 
 	vr_isLeftControllerValid = isLeftControllerValid;
 	vr_isRightControllerValid = isRightControllerValid;
