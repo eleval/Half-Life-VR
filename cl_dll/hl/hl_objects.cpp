@@ -38,12 +38,15 @@ void UpdateBeams ( void )
 	cl_entity_t *pthisplayer = gEngfuncs.GetLocalPlayer();
 	int idx = pthisplayer->index;
 		
-	// Get our exact viewangles from engine
-	gEngfuncs.GetViewAngles( (float *)angles );
+	cl_entity_s* viewModel = gEngfuncs.GetViewModel();
+	if (viewModel == nullptr)
+		return;
 
 	// Determine our last predicted origin
 	HUD_GetLastOrg( (float *)&origin );
 
+	VectorCopy(viewModel->curstate.angles, angles);
+	angles.x = -angles.x;
 	AngleVectors( angles, forward, right, up );
 
 	VectorCopy( origin, vecSrc );
