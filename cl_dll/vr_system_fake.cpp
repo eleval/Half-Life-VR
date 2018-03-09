@@ -282,31 +282,37 @@ void VRSystem_Fake::Update()
 	if (keyboardState[VK_UP] >> 4)
 	{
 		fakeDevice.position += glm::vec3(forward) * deltaTime;
+		fakeDevice.velocity = forward * 10.0f;
 	}
 
 	if (keyboardState[VK_DOWN] >> 4)
 	{
 		fakeDevice.position -= glm::vec3(forward) * deltaTime;
+		fakeDevice.velocity = -forward * 10.0f;
 	}
 
 	if (keyboardState[VK_LEFT] >> 4)
 	{
 		fakeDevice.position += glm::vec3(left) * deltaTime;
+		fakeDevice.velocity = left;
 	}
 
 	if (keyboardState[VK_RIGHT] >> 4)
 	{
 		fakeDevice.position -= glm::vec3(left) * deltaTime;
+		fakeDevice.velocity = -left;
 	}
 
 	if (keyboardState[VK_PRIOR] >> 4)
 	{
 		fakeDevice.position += glm::vec3(up) * deltaTime;
+		fakeDevice.velocity = up;
 	}
 
 	if (keyboardState[VK_NEXT] >> 4)
 	{
 		fakeDevice.position -= glm::vec3(up) * deltaTime;
+		fakeDevice.velocity = -up;
 	}
 
 	// Update controller buttons
