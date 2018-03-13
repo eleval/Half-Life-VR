@@ -10,10 +10,6 @@
 #include <windows.h>
 #include <gl\gl.h>
 
-#ifndef M_PI
-#define M_PI		3.14159265358979323846f
-#endif
-
 #undef min
 #undef max
 
@@ -263,15 +259,17 @@ void VRSystem_Fake::Update()
 	const int deltaMouseX = mouseX - gEngfuncs.GetWindowCenterX();
 	const int deltaMouseY = mouseY - gEngfuncs.GetWindowCenterY();
 
+	const float pi = glm::pi<float>();
+
 	VRFakeDevice& fakeDevice = fakeDevices[controlledDeviceIdx];
-	fakeDevice.rotation.y -= deltaMouseX * M_PI * 0.001f;
-	fakeDevice.rotation.x -= deltaMouseY * M_PI * 0.001f;
+	fakeDevice.rotation.y -= deltaMouseX * pi * 0.001f;
+	fakeDevice.rotation.x -= deltaMouseY * pi * 0.001f;
 
 	// Prevent x rotation from going too far up or down
-	fakeDevice.rotation.x = std::min(std::max(-M_PI * 0.5f + 0.1f, fakeDevice.rotation.x), M_PI * 0.5f - 0.1f);
+	fakeDevice.rotation.x = std::min(std::max(-pi * 0.5f + 0.1f, fakeDevice.rotation.x), pi * 0.5f - 0.1f);
 
 	glm::vec3 forward(-sinf(fakeDevice.rotation.y), 0.0f, -cosf(fakeDevice.rotation.y));
-	glm::vec3 left(sinf(fakeDevice.rotation.y - M_PI * 0.5f), 0.0f, cosf(fakeDevice.rotation.y - M_PI * 0.5f));
+	glm::vec3 left(sinf(fakeDevice.rotation.y - pi * 0.5f), 0.0f, cosf(fakeDevice.rotation.y - pi * 0.5f));
 	glm::vec3 up(0.0f, 1.0f, 0.0f);
 
 	gEngfuncs.pfnSetMousePos(gEngfuncs.GetWindowCenterX(), gEngfuncs.GetWindowCenterY());
@@ -455,7 +453,7 @@ glm::mat4 VRSystem_Fake::GetProjectionMatrix(VREye eye, float nearZ, float farZ)
 {
 	// Since we have nothing to render, we don't care about that, we will just return an identity matrix
 	glm::mat4 identity(1.0f);
-	return glm::perspectiveRH(M_PI * 0.5f, 4.0f / 3.0f, nearZ, farZ);
+	return glm::perspectiveRH(glm::pi<float>() * 0.5f, 4.0f / 3.0f, nearZ, farZ);
 }
 
 glm::mat4 VRSystem_Fake::GetEyeToHeadTransform(VREye eye)
