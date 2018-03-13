@@ -81,7 +81,7 @@ namespace HLVRLauncher
 			ProcessStartInfo processStartInfo = new ProcessStartInfo();
 			processStartInfo.FileName = hlExePath;
 			processStartInfo.WorkingDirectory = HLDirectory;
-			processStartInfo.Arguments = "-game vr -dev -env -console -insecure -nomouse -nojoy +sv_lan 1 +vr_systemType 1 +vr_renderWorldBackface 0 +map t0a0";
+			processStartInfo.Arguments = "-game vr -dev -env -console -insecure -nomouse -nojoy +sv_lan 1 +vr_systemType 1 +vr_renderWorldBackface 0 +map vr_test";
 
 			Process hlProcess = Process.Start(processStartInfo);
 			hlProcess.WaitForExit();
@@ -110,8 +110,17 @@ namespace HLVRLauncher
 			if (!string.IsNullOrEmpty(HLDirectory) && !string.IsNullOrEmpty(openGLSourcePath))
 			{
 				string openGLTargetPath = Path.Combine(HLDirectory, "opengl32.dll");
-				File.Copy(openGLTargetPath, openGLTargetPath, true);
-			}
+                if (File.Exists(openGLTargetPath))
+                {
+                    FileInfo fileInfo = new FileInfo(openGLTargetPath);
+                    fileInfo.IsReadOnly = false;
+                }
+				File.Copy(openGLSourcePath, openGLTargetPath, true);
+                {
+                    FileInfo fileInfo = new FileInfo(openGLTargetPath);
+                    fileInfo.IsReadOnly = true;
+                }
+            }
 		}
 	}
 }
