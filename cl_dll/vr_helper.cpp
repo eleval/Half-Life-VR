@@ -579,16 +579,13 @@ void VRHelper::SendPositionUpdateToServer()
 	}
 
 	char cmd[MAX_COMMAND_SIZE] = { 0 };
-	sprintf_s(cmd, "updatevr %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %i %i %.2f",
+	sprintf_s(cmd, "updatevr %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f",
 		hmdOffset.x, hmdOffset.y, hmdOffset.z,
 		leftControllerOffset.x, leftControllerOffset.y, leftControllerOffset.z,
 		leftControllerAngles.x, leftControllerAngles.y, leftControllerAngles.z,
 		weaponOffset.x, weaponOffset.y, weaponOffset.z,
 		weaponAngles.x, weaponAngles.y, weaponAngles.z,
-		weaponVelocity.x, weaponVelocity.y, weaponVelocity.z,
-		isLeftControllerValid ? 1 : 0,
-		isRightControllerValid ? 1 : 0,
-		vr_roomcrouch->value
+		weaponVelocity.x, weaponVelocity.y, weaponVelocity.z
 	);
 	gEngfuncs.pfnClientCmd(cmd);
 }
