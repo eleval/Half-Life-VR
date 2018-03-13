@@ -2,8 +2,12 @@
 #include <windows.h>
 #include "hud.h"
 #include "vr_input.h"
+#include "vr_helper.h"
 
 #include "cl_util.h"
+
+#include "glm/vec3.hpp"
+#include "glm/trigonometric.hpp"
 
 VRInput g_vrInput;
 
@@ -251,13 +255,15 @@ void VRInput::HandleButtonPressLeft(VRButton button, VRControllerState controlle
 
 			if (buttonDown)
 			{
+				const float rotationAngle = glm::radians(vr_control_rotation_angle->value);
+				const glm::vec3 rotationAxis(0.0f, 1.0f, 0.0f);
 				if (touchPadAxis.x <= -0.5f) // Touchpad left
 				{
-					// TODO : Rotate Left snap
+					gVRHelper.RotateCamera(rotationAngle, rotationAxis);
 				}
 				else if (touchPadAxis.x >= 0.5f) // Touchpad right
 				{
-					// TODO : Rotate Right snap
+					gVRHelper.RotateCamera(-rotationAngle, rotationAxis);
 				}
 				else if (touchPadAxis.y <= -0.5f) // Touchpad down
 				{

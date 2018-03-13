@@ -13,7 +13,7 @@ public:
 	cvar_t	*vr_control_teleport;
 	cvar_t	*vr_control_hand;
 	cvar_t	*vr_control_scheme;
-
+	cvar_t  *vr_control_rotation_angle;
 
 	void HandleButtonPress(VRButton button, VRControllerState controllerState, bool isLeftController, bool buttonDown);
 	void HandleTrackpad(VRButton button, VRControllerState controllerState, bool isLeftController, bool buttonDown);

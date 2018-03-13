@@ -37,8 +37,9 @@ public:
 
 	void GetWalkAngles(float * angles);
 
-	glm::mat4 GetCenteredRawDeviceTransform(VRTrackedDeviceIndex deviceIndex);
-	const glm::mat4& GetDeviceAbsoluteTransform(VRTrackedDeviceIndex deviceIndex);
+	glm::mat4 GetTransformedDeviceTransform(VRTrackedDeviceIndex deviceIndex);
+	glm::mat4 GetCenteredTransformedDeviceTransform(VRTrackedDeviceIndex deviceIndex);
+	const glm::mat4& GetDeviceRawTransform(VRTrackedDeviceIndex deviceIndex);
 	const glm::mat4& GetDeviceHLSpaceTransform(VRTrackedDeviceIndex deviceIndex);
 	glm::vec3 GetDeviceHLSpaceTranslation(VRTrackedDeviceIndex deviceIndex);
 	glm::vec3 GetDeviceHLSpaceVelocity(VRTrackedDeviceIndex deviceIndex);
@@ -46,6 +47,7 @@ public:
 	void DecomposeHLSpaceTransform(const glm::mat4& mat, glm::vec3& outForward, glm::vec3& outLeft, glm::vec3& outUp);
 
 	void Recenter();
+	void RotateCamera(float angle, const glm::vec3 axis);
 
 	void TestRenderControllerPosition(bool leftOrRight);
 private:
@@ -67,13 +69,17 @@ private:
 	Vector GetHLAnglesFromVRMatrix(const glm::mat4 &mat);
 
 	HLSpaceVRTransforms hlSpaceVRTransforms;
-	std::vector<VRTrackedDevicePose> rawTrackedDevicePoses;
+	std::vector<VRTrackedDevicePose> transformedDevicePoses;
+	std::vector<VRTrackedDevicePose> rawDevicePoses;
+	std::vector<VRTrackedDevicePose> prevRawDevicePoses;
 
 	VRControllerState currLeftControllerState;
 	VRControllerState currRightControllerState;
 
 	glm::mat4 centerTransform;
 	glm::mat4 invertCenterTransform;
+
+	glm::mat4 cameraRotation;
 
 	bool isVRRoomScale = true;
 
