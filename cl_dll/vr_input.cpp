@@ -269,12 +269,16 @@ void VRInput::HandleButtonPressLeft(VRButton button, VRControllerState controlle
 				{
 					// Run forward
 					ClientCmd("cl_forwardspeed 400");
+					ClientCmd("cl_backwardspeed 400");
+					ClientCmd("cl_sidespeed 400");
 					ClientCmd("+forward");
 				}
 				else if (touchPadAxis.y >= 0.5f) // Touchpad up
 				{
 					// Walk forward
 					ClientCmd("cl_forwardspeed 175");
+					ClientCmd("cl_backwardspeed 175");
+					ClientCmd("cl_sidespeed 175");
 					ClientCmd("+forward");
 				}
 			}
